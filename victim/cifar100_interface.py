@@ -10,7 +10,7 @@ def test_resnet(dataset, model_name, x):
     model = getattr(resnet, f"{dataset}_{model_name}")()
     x = torch.empty((1, 3, 16, 16))
     # assert x.shape == (1, 3, 32, 32)
-    # y = model(x)
+    y = model(x)
     summary(model, (3, 32, 32))
     # print(y)
 

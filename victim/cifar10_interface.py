@@ -26,12 +26,14 @@ def _helper(args):
     )
 
     model = CIFAR10Module(args)
-    data = CIFAR10Data(data_dir=os.path.join(os.getcwd(), "data"), num_workers=1, batch_size=args.batch_size, download=True)
+    # data = CIFAR10Data(data_dir=os.path.join(os.getcwd(), "data"), num_workers=1, batch_size=args.batch_size, download=True)
     state_dict = os.path.join(
         os.getcwd(), "model_weights", "state_dicts", args.classifier + ".pt"
     )
     model.model.load_state_dict(torch.load(state_dict))
-    trainer.test(model, data.test_dataloader())
+    # trainer.test(model, data.test_dataloader())
+
+    return model
 
 
 if __name__ == '__main__':
@@ -52,7 +54,7 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=256)
     parser.add_argument("--max_epochs", type=int, default=100)
     parser.add_argument("--num_workers", type=int, default=8)
-    parser.add_argument("--gpu_id", type=str, default="3")
+    parser.add_argument("--gpu_id", type=str, default="0")
 
     parser.add_argument("--learning_rate", type=float, default=1e-2)
     parser.add_argument("--weight_decay", type=float, default=1e-2)
