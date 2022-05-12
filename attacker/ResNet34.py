@@ -3,9 +3,9 @@ import numpy as np
 from torch import nn
 from torchsummary import summary
 import matplotlib.pyplot as plt
-from config import *
+from attacker.config import *
 
-## ResBlock:
+# # ResBlock:
 # conv2 without maxpooling 
 # conv2_1, conv2_2: (64,64,F)
 # conv3_1: (64,128,T)
@@ -33,7 +33,7 @@ class ResBlock(nn.Module):
     input = input + shortcut
     return nn.ReLU()(input)
 
-## ResNet 34
+# # ResNet 34
 #
 #
 

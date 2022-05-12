@@ -1,8 +1,9 @@
 import torch
 import numpy as np
-from config import *
-from utils import *
-#from victim import fetch_logits
+from attacker.config import *
+from attacker.utils import *
+from victim.interface import fetch_logits
+
 
 def QueryVictim(victim_type, trainloader, query_size, sampling=None):
   # create sampleset from trainloader
@@ -14,7 +15,7 @@ def QueryVictim(victim_type, trainloader, query_size, sampling=None):
   elif(sampling=='coreset_cross'):
     indices = LoadCoreset('cifar10_cross_entropy_index_19')
   else:
-    indices = np.arrange(query_size)
+    indices = np.arange(query_size)
   dataset = torch.utils.data.Subset(dataset, indices)
   dataloader = trainloader = torch.utils.data.DataLoader(dataset, batch_size=config['batch_size'], shuffle=True)
 
@@ -22,7 +23,7 @@ def QueryVictim(victim_type, trainloader, query_size, sampling=None):
   X, _ = next(iter(dataloader))
   if torch.cuda.is_available():
     X = X.type(torch.cuda.FloatTensor)
-  Y = fetch_logits(args=victim_type,query_img=X)
+  Y = fetch_logits(query_img=X)
   Y = torch.max(Y.data, 1)[1]
   if torch.cuda.is_available():
     Y = Y.type(torch.cuda.LongTensor)
@@ -39,7 +40,7 @@ def QueryVictimModel(victim, trainloader, query_size, sampling=None):
   if(sampling=='random'):
     indices = np.random.default_rng().choice(len(dataset), size=query_size, replace=False)
   else:
-    indices = np.arrange(query_size)
+    indices = np.arange(query_size)
   dataset = torch.utils.data.Subset(dataset, indices)
   dataloader = trainloader = torch.utils.data.DataLoader(dataset, batch_size=config['batch_size'], shuffle=True)
 
@@ -57,3 +58,5 @@ def QueryVictimModel(victim, trainloader, query_size, sampling=None):
   querydataset = torch.utils.data.TensorDataset(X, Y)
   queryloader = torch.utils.data.DataLoader(querydataset, batch_size=config['batch_size'], shuffle=True)
   return queryloader
+
+
