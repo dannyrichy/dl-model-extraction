@@ -17,4 +17,4 @@ def test_resnet(dataset, model_name, x):
     assert y.shape == (1, num_classes)
 
 
-test_resnet("cifar100", "resnet44", torch.empty((1, 3, 32, 32)))
+test_resnet("gtrsb", "resnet44", torch.empty((1, 3, 32, 32)))

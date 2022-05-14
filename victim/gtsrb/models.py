@@ -2,9 +2,12 @@ import pytorch_lightning as pl
 import torch
 from torchmetrics import Accuracy
 
+from victim.gtsrb import resnet
 from victim.scheduler import WarmupCosineLR
 
 all_classifiers = {
+    model_name: getattr(resnet, f"GTSRB_{model_name}")()
+    for model_name in ["resnet20", "resnet44"]
     # "vgg11_bn": vgg11_bn(),
     # "vgg13_bn": vgg13_bn(),
     # "vgg16_bn": vgg16_bn(),
