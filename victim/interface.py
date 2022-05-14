@@ -52,4 +52,4 @@ def fetch_logits(args=None, query_img=None):
 
         args = parser.parse_args()
     model = _helper(args)
-    return [model(x) for x in query_img]
+    return model.model(query_img)
