@@ -21,8 +21,8 @@ def QueryVictim(victim_type, trainloader, query_size, sampling=None):
 
   # query victim
   X, _ = next(iter(dataloader))
-  if torch.cuda.is_available():
-    X = X.type(torch.cuda.FloatTensor)
+  # if torch.cuda.is_available():
+  #   X = X.type(torch.cuda.FloatTensor)
   Y = fetch_logits(query_img=X)
   Y = torch.max(Y.data, 1)[1]
   if torch.cuda.is_available():

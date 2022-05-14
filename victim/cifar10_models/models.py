@@ -16,7 +16,7 @@ all_classifiers = {
     "vgg19_bn": vgg19_bn(),
     "resnet18": resnet18(),
     "resnet34": resnet34(),
-    "resnet50": resnet50(),
+    "resnet50": resnet50(device='gpu'),
     "densenet121": densenet121(),
     "densenet161": densenet161(),
     "densenet169": densenet169(),
