@@ -23,6 +23,12 @@ def fetch_logits(args=None, query_img=None):
             "learning_rate": 1e-2,
             "weight_decay": 1e-2
         }
+    else:
+        args["batch_size"]= 256
+        args["max_epochs"]= 100
+        args["num_workers"]= 8
+        args["learning_rate"]= 1e-2
+        args["weight_decay"]= 1e-2
         # parser = ArgumentParser()
         # parser.add_argument("--data", type=str, default="cifar10", choices=["cifar10", "cifar100", "gtsrb"])
         # # PROGRAM level args
