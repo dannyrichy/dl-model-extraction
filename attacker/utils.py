@@ -8,6 +8,6 @@ def set_seed(seed):
   np.random.seed(seed)
 
 def LoadCoreset(filename):
-    with open('coreset/'+filename, 'rb') as fo:
+    with open('attacker/coreset/'+filename, 'rb') as fo:
         dict = pickle.load(fo)
     return dict
