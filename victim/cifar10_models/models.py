@@ -35,7 +35,7 @@ class CIFAR10Module(pl.LightningModule):
         self.criterion = torch.nn.CrossEntropyLoss()
         self.accuracy = Accuracy()
 
-        self.model = all_classifiers[hparams.classifier]
+        self.model = all_classifiers[hparams["model_name"]]
 
     def forward(self, batch):
         images, labels = batch
