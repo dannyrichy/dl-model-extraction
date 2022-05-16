@@ -10,18 +10,18 @@ from victim.cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from victim.scheduler import WarmupCosineLR
 
 all_classifiers = {
-    "vgg11_bn": vgg11_bn(),
-    "vgg13_bn": vgg13_bn(),
-    "vgg16_bn": vgg16_bn(),
-    "vgg19_bn": vgg19_bn(),
-    "resnet18": resnet18(),
-    "resnet34": resnet34(),
+    "vgg11_bn": vgg11_bn(device='gpu'),
+    "vgg13_bn": vgg13_bn(device='gpu'),
+    "vgg16_bn": vgg16_bn(device='gpu'),
+    "vgg19_bn": vgg19_bn(device='gpu'),
+    "resnet18": resnet18(device='gpu'),
+    "resnet34": resnet34(device='gpu'),
     "resnet50": resnet50(device='gpu'),
-    "densenet121": densenet121(),
-    "densenet161": densenet161(),
-    "densenet169": densenet169(),
-    "mobilenet_v2": mobilenet_v2(),
-    "googlenet": googlenet(),
+    "densenet121": densenet121(device='gpu'),
+    "densenet161": densenet161(device='gpu'),
+    "densenet169": densenet169(device='gpu'),
+    "mobilenet_v2": mobilenet_v2(device='gpu'),
+    "googlenet": googlenet(device='gpu'),
 }
 
 
@@ -29,9 +29,9 @@ class CIFAR10Module(pl.LightningModule):
     def __init__(self, hparams):
         super().__init__()
         # self.hparams = hparams
-        self.lr = hparams.learning_rate
-        self.weight_decay = hparams.weight_decay
-        self.max_epochs = hparams.max_epochs
+        self.lr = hparams["learning_rate"]
+        self.weight_decay = hparams["weight_decay"]
+        self.max_epochs = hparams["max_epochs"]
         self.criterion = torch.nn.CrossEntropyLoss()
         self.accuracy = Accuracy()
 
