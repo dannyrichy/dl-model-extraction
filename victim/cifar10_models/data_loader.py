@@ -5,12 +5,12 @@ from torchvision.datasets import CIFAR10
 
 
 class CIFAR10Data(pl.LightningDataModule):
-    def __init__(self, data_dir, num_workers, batch_size,download):
+    def __init__(self, data_dir, num_workers, batch_size, download):
         super().__init__()
         self.data_dir = data_dir
         self.num_workers = num_workers
         self.batch_size = batch_size
-        self.download= download
+        self.download = download
         self.mean = (0.4914, 0.4822, 0.4465)
         self.std = (0.2471, 0.2435, 0.2616)
 
@@ -23,7 +23,7 @@ class CIFAR10Data(pl.LightningDataModule):
                 T.Normalize(self.mean, self.std),
             ]
         )
-        dataset = CIFAR10(root=self.data_dir, train=True, transform=transform)
+        dataset = CIFAR10(root=self.data_dir, train=True, transform=transform, download=self.download)
         dataloader = DataLoader(
             dataset,
             batch_size=self.batch_size,

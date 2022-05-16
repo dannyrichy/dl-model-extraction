@@ -21,7 +21,7 @@ def download_cifar10_model():
     block_size = 2 ** 20  # Mebibyte
     t = tqdm(total=total_size, unit="MiB", unit_scale=True)
 
-    with open(os.path.join("model_weights", "state_dicts.zip"), "wb") as f:
+    with open(os.path.join(os.getcwd(),"model_weights", "state_dicts.zip"), "wb") as f:
         for data in r.iter_content(block_size):
             t.update(len(data))
             f.write(data)
