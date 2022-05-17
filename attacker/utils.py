@@ -25,9 +25,11 @@ def getDataset(dataset, batch_size):
     if(dataset==CIFAR_10):
         trainset = torchvision.datasets.CIFAR10(root='./cifar10', train=True, download=True, transform=transform)
         testset = torchvision.datasets.CIFAR10(root='./cifar10', train=False, download=True, transform=transform)
+        outputs=10
     elif(dataset==CIFAR_100):
         trainset = torchvision.datasets.CIFAR100(root='./cifar100', train=True, download=True, transform=transform)
         testset = torchvision.datasets.CIFAR100(root='./cifar100', train=False, download=True, transform=transform)
+        outputs=100
     else:
         raise Exception("Dataset not configured!")
 
@@ -35,7 +37,7 @@ def getDataset(dataset, batch_size):
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False)
      
-    return trainloader, testloader
+    return trainloader, testloader, outputs
 
 
 # Load Indices from saved corset algorithms
@@ -44,16 +46,16 @@ def LoadCoreset(dataset, query_type):
     # select filename
     if(query_type=='coreset'):
         if(dataset==CIFAR_10):
-            filename = 'cifar10_entropy_index_19'
+            filename = 'cifar10_entropy_dict'
         elif(dataset==CIFAR_100):
-            filename = 'cifar100_entropy_index_19'
+            filename = 'cifar100_entropy_dict'
         else:
             raise Exception("Dataset is not configured for coreset!")
     elif(query_type=='coreset_cross'):
         if(dataset==CIFAR_10):
-            filename = 'cifar10_cross_entropy_index_19'
+            filename = 'cifar10_cross_entropy_dict'
         elif(dataset==CIFAR_100):
-            filename = 'cifar100_cross_entropy_index_19'
+            filename = 'cifar100_cross_entropy_dict'
         else:
             raise Exception("Dataset is not configured for coreset cross!")
     else:
@@ -72,8 +74,8 @@ def SaveVisualize(model, result, title):
     (train_loss, train_acc, test_loss, test_acc) = result
     
     # save everything
-    torch.save(model.state_dict(), f'attacker/results/{title}')
-    torch.save(result,f'attacker/results/{title}_result')
+    torch.save(model.state_dict(), f'results/{title}')
+    torch.save(result,f'results/{title}_result')
     #torch.save(train_loss,f'attacker/results/{title}_TrainLoss')
     #torch.save(train_acc,f'attacker/results/{title}_TrainAcc')
     #torch.save(test_loss,f'attacker/results/{title}_TestLoss' )
@@ -86,7 +88,7 @@ def SaveVisualize(model, result, title):
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig(f'attacker/results/{title}_Loss')
+    plt.savefig(f'results/{title}_Loss')
     plt.show()
     plt.plot(range(config["epochs"]), train_acc, 'b-', label='Train_accuracy')
     plt.plot(range(config["epochs"]), test_acc, 'g-', label='Test_accuracy')
@@ -94,7 +96,7 @@ def SaveVisualize(model, result, title):
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig(f'attacker/results/{title}_Accuracy')
+    plt.savefig(f'results/{title}_Accuracy')
     plt.show()
     
     # return in percentages

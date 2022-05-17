@@ -5,14 +5,17 @@ from attacker.utils import *
 from victim.interface import fetch_logits
 
 
-def QueryVictim(victim, trainloader, query_size, query_type=None):
+def QueryVictim(victim, outputs, trainloader, query_size, query_type=None):
     # create sampleset from trainloader
     dataset = trainloader.dataset
     if(query_type=='random'):
         indices = np.random.default_rng().choice(len(dataset), size=query_size, replace=False)
     elif(query_type=='coreset' or query_type=='coreset_cross'):
-        indices = LoadCoreset(victim["data"], query_type)
-        indices = indices[:query_size]
+        ind_dict = LoadCoreset(victim["data"], query_type)
+        class_query_size = int(query_size/outputs);
+        indices = []
+        for label in ind_dict.values():
+            indices.extend(label[:class_query_size])
     else:
         indices = np.arange(query_size)
     dataset = torch.utils.data.Subset(dataset, indices)
