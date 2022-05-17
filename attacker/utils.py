@@ -4,6 +4,7 @@ import pickle
 import matplotlib.pyplot as plt
 from attacker.config import *
 from victim.__init__ import *
+from attacker.ResNet34 import *
 
 # set seed for all packages
 
