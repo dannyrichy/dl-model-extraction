@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
+import matplotlib.pyplot as plt
 import numpy as np
 
 # use GPU if available
@@ -25,31 +26,36 @@ elif name=="GTSRB":
     n_classes = 43
     
 # load data
+transform = transforms.Compose(
+        [transforms.ToTensor(),
+         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
 if name=="CIFAR10":
     dataset = torchvision.datasets.CIFAR10(root='./CIFAR10', 
                                            train=True, 
                                            download=True, 
-                                           transform=transforms.ToTensor())
+                                           transform=transform)
     
     test_dataset = torchvision.datasets.CIFAR10(root='./CIFAR10', 
                                            train=False, 
                                            download=True, 
-                                           transform=transforms.ToTensor())
+                                           transform=transform)
 
 if name=="CIFAR100":
     dataset = torchvision.datasets.CIFAR100(root='./CIFAR100', 
                                            train=True, 
                                            download = True, 
-                                           transform=transforms.ToTensor())
+                                           transform=transform)
     
     test_dataset = torchvision.datasets.CIFAR100(root='./CIFAR100', 
                                            train=False, 
                                            download=True, 
-                                           transform=transforms.ToTensor())
+                                           transform=transform)
     
 if name=="GTSRB":
     transform = transforms.Compose([transforms.ToTensor(), 
-                                    transforms.Resize([32,32])])
+                                    transforms.Resize([32,32]), 
+                                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
     
     dataset = torchvision.datasets.GTSRB(root='./GTSRB', 
                                         split='train', 
@@ -73,14 +79,12 @@ class ConvNet(nn.Module):
     def __init__(self, n_classes):
         super().__init__()
         self.network = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=5),
+            nn.Conv2d(3, 16, kernel_size=5),
             nn.MaxPool2d(2, 2),
-            nn.Conv2d(32, 64, kernel_size=3),
+            nn.Conv2d(16, 32, kernel_size=3),
             nn.MaxPool2d(2, 2),
             nn.Flatten(), 
-            nn.Linear(2304, 1024),
-            nn.ReLU(),
-            nn.Linear(1024, 512),
+            nn.Linear(1152, 512),
             nn.ReLU(),
             nn.Linear(512, n_classes))
         
@@ -92,23 +96,27 @@ model = ConvNet(n_classes)
 model = model.to(device)
 
 # Set Loss function with criterion
-criterion = nn.CrossEntropyLoss()
+criterion     = nn.CrossEntropyLoss()
 cross_entropy = nn.CrossEntropyLoss(reduction='none')
 
 # Set optimizer with optimizer
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)  
+optimizer     = torch.optim.Adam(model.parameters(), lr=1e-4)  
 
 # training
-entropy_ind_epoch   = {}
-cross_entropy_ind_epoch = {}
+ent_idx_dict  = {}
+cent_idx_dict = {}
+for k in range(n_classes):
+    ent_idx_dict[k]  = []
+    cent_idx_dict[k] = []
 
-for epoch in range(n_epoch):
-    entropy_list = []
-    cross_entropy_list = []
-    
+entropy_list  = []
+centropy_list = []
+labels_list   = []
+
+for epoch in range(n_epoch):    
     total        = 0
     correct      = 0
-    for i, (images, labels) in enumerate(train_dataloader):
+    for images, labels in train_dataloader:
         images = images.to(device)
         labels = labels.to(device)
         
@@ -121,43 +129,42 @@ for epoch in range(n_epoch):
         loss.backward()
         optimizer.step()
         
-        entropy     = torch.distributions.Categorical(logits=outputs).entropy()
-        c_entropy   = cross_entropy(outputs, labels)
-        entropy_list.append(entropy)
-        cross_entropy_list.append(c_entropy)
-        
         _, predicted = torch.max(outputs.data, 1)
         total   += labels.size(0)
         correct += (predicted == labels).sum().item()
+        
+        if epoch == n_epoch-1:
+            entropy  = torch.distributions.Categorical(logits=outputs).entropy()
+            centropy = cross_entropy(outputs, labels)
+            
+            entropy_list.append(entropy)
+            centropy_list.append(centropy)
+            labels_list.append(labels)
     
-    entropy_list = torch.cat(entropy_list)
-    cross_entropy_list = torch.cat(cross_entropy_list)
+    if epoch == n_epoch-1:
+        entropy_list  = torch.cat(entropy_list).cpu()
+        centropy_list = torch.cat(centropy_list).cpu()
+        labels_list   = torch.cat(labels_list).cpu()
     
-    values, ind  = torch.sort(entropy_list, descending=True)
-    entropy_ind_epoch[epoch] = ind
-    values, ind  = torch.sort(cross_entropy_list, descending=True)
-    cross_entropy_ind_epoch[epoch] = ind
+        values, ind  = torch.sort(entropy_list, descending=True)
+        for i in ind:
+            ent_idx_dict[labels_list[i].item()].append(i.item())
+        values, ind  = torch.sort(centropy_list, descending=True)
+        for i in ind:
+            cent_idx_dict[labels_list[i].item()].append(i.item())
         
     print(f'Epoch [{epoch+1}/{n_epoch}], Loss: {loss.item()}, Train acc: {100*correct/total}')
 
 # save model
-torch.save(model.state_dict(), 'Results/cifar10_convnet_model')
+torch.save(model.state_dict(), 'results/cifar100_convnet_model')
 
 # save the indices
 import pickle
 
-f = open('cifar10_entropy_index_9', 'wb')
-pickle.dump(np.array(entropy_ind_epoch[9].cpu()), f)
+f = open('cifar100_entropy_dict', 'wb')
+pickle.dump(ent_idx_dict, f)
 f.close()
 
-f = open('cifar10_entropy_index_19', 'wb')
-pickle.dump(np.array(entropy_ind_epoch[19].cpu()), f)
-f.close()
-
-f = open('cifar10_cross_entropy_index_9', 'wb')
-pickle.dump(np.array(cross_entropy_ind_epoch[9].cpu()), f)
-f.close()
-
-f = open('cifar10_cross_entropy_index_19', 'wb')
-pickle.dump(np.array(cross_entropy_ind_epoch[19].cpu()), f)
+f = open('cifar100_cross_entropy_dict', 'wb')
+pickle.dump(cent_idx_dict, f)
 f.close()
