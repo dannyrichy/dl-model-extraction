@@ -2,7 +2,6 @@ import torch
 import numpy as np
 from torch import nn
 from torchsummary import summary
-from attacker.config import *
 
 # # ResBlock:
 # conv2 without maxpooling 
@@ -87,67 +86,3 @@ class ResNet34(nn.Module):
 # check_model = ResNet34(3, ResBlock, outputs=1000)
 # check_model.to(torch.device("cuda:0" if torch.cuda.is_available() else "cpu"))
 # summary(check_model, (3,224,224))
-
-# # Training Resnet Model
-
-def Training(model, train_loader, test_loader, input_shape, epochs, optimizer, loss):
-    train_acc = []
-    train_loss = []
-    test_acc = []
-    test_loss = []
-    for epoch in range(epochs):
-        num_train = 0
-        num_correct_train = 0
-        print("\repoch", epoch+1)
-        # Train Data
-        for (xList, yList) in train_loader:
-            xList, yList = torch.autograd.Variable(
-                xList), torch.autograd.Variable(yList)
-            optimizer.zero_grad()
-
-            if torch.cuda.is_available():
-                xList = xList.type(torch.cuda.FloatTensor)
-                yList = yList.type(torch.cuda.LongTensor)
-                device = torch.device(config['device'])
-                model.to(device)
-
-            outputs = model(xList)
-            train_loss_func = loss(outputs, yList)
-            train_loss_func.backward()
-            optimizer.step()
-
-            num_train += len(yList)  # i.e., add bath size
-
-            predicts = torch.max(outputs.data, 1)[1]
-            num_correct_train += (predicts == yList).float().sum()
-            
-            print('\r %d ...' % num_train, end='')
-        
-        train_acc.append(num_correct_train / num_train)
-        train_loss.append(train_loss_func.data)
-        print("\r    - train_acc %.5f train_loss %.5f" %
-                  (train_acc[-1], train_loss[-1]))
-        #if(epoch%(int(epochs/4))==0): print(model.L0[0].weight)
-
-        # Test Data
-        num_test = 0
-        num_correct_test = 0
-        for (xList, yList) in test_loader:
-            if torch.cuda.is_available():
-                xList = xList.type(torch.cuda.FloatTensor)
-                yList = yList.type(torch.cuda.LongTensor)
-                device = torch.device(config['device'])
-                model.to(device)
-            
-            outputs = model(xList)
-            test_loss_func = loss(outputs, yList)
-
-            num_test += len(yList)
-            predicts = torch.max(outputs.data, 1)[1]
-            num_correct_test += (predicts == yList).float().sum()
-
-        test_acc.append(num_correct_test / num_test)
-        test_loss.append(test_loss_func.data)
-        print("\r    - test_acc  %.5f test_loss  %.5f" %
-                (test_acc[-1], test_loss[-1]))
-    return train_loss, train_acc, test_loss, test_acc

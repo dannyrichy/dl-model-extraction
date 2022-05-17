@@ -6,50 +6,24 @@ config = {
     "learning_rate": 0.008,
     "epochs": 80,
     "query_size":10000,
-    "query_type": 'coreset_cross',
+    "query_type": 'random',
     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-    "victim": { "data": CIFAR_100,  "model_name": RESNET_56 }
+    "victim": { "data": CIFAR_10,  "model_name": RESNET50 },
+    "attacker": RESNET50
 }
-
-# config = {
-#     "batch_size": 50,
-#     "learning_rate": 0.001,
-#     "epochs": 10,
-#     "query_size":500,
-#     "query_type": 'coreset',
-#     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-#     "victim": { "data": CIFAR_10,  "model_name": VGG11_BN }
-# }
 
 parameters = {
-        "query_size": [10000, 20000, 30000, 40000],
-        "query_type": ['coreset', 'coreset_cross'],
-        "victim":[{ "data": CIFAR_10, "model_name": RESNET50}]
+        "query_size": [20000],
+        "query_type": ['random','coreset', 'coreset_cross'],
+        "victim":[{ "data": CIFAR_10, "model_name": RESNET50}],
+        "attacker": [RESNET34]
 }
-
-# parameters = {
-#         "query_size": [10000, 20000, 30000, 40000],
-#         "query_type": ['random', 'coreset', 'coreset_cross'],
-#         "victim":[{ "data": CIFAR_100,  "model_name": RESNET_56},
-#                   {"data": CIFAR_10,  "model_name": VGG11_BN},
-#                   {"data": CIFAR_100,  "model_name": VGG11_BN}]
-# }
-
-# parameters = {
-#         "query_size": [1000],
-#         "query_type": ['coreset_cross'],
-#         "victim":[{ "data": CIFAR_10,  "model_name": RESNET50}]
-# }
 
 # # Parameter Runs
 
-# ## Run1
+# ## Best Query Type, Best Query sizes on 2 datasets
 
-# parameters = {
-#         "query_size": [10000, 20000, 30000, 40000, 50000],
-#         "query_type": ['random', 'coreset', 'coreset_cross'],
-#         "victim":[{ "data": CIFAR_10,  "model_name": RESNET50}]
-# }
+# ### Run1 - CIFAR10 - A_RESNET34 - V_RESNET50
 
 # config = {
 #     "batch_size": 500,
@@ -61,7 +35,73 @@ parameters = {
 #     "victim": { "data": CIFAR_100,  "model_name": RESNET_56 }
 # }
 
-# ## Run2
+# parameters = {
+#         "query_size": [10000, 20000, 30000, 40000, 50000],
+#         "query_type": ['random', 'coreset', 'coreset_cross'],
+#         "victim":[{ "data": CIFAR_10,  "model_name": RESNET50}]
+# }
+
+# ### Run2 - CIFAR10 - A_RESNET34 - V_RESNET50 - (running currently)
+
+# config = {
+#     "batch_size": 500,
+#     "learning_rate": 0.008,
+#     "epochs": 80,
+#     "query_size":10000,
+#     "query_type": 'coreset',
+#     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+#     "victim": { "data": CIFAR_10,  "model_name": RESNET50 },
+# }
+
+# parameters = {
+#         "query_size": [10000, 20000, 30000, 40000],
+#         "query_type": ['coreset', 'coreset_cross'],
+#         "victim":[{ "data": CIFAR_10, "model_name": RESNET50}]
+# }
+
+# ### Run3 - CIFAR10 - A_RESNET34 - V_VGG19_BN - (tbr)
+
+# config = {
+#     "batch_size": 500,
+#     "learning_rate": 0.008,
+#     "epochs": 80,
+#     "query_size":10000,
+#     "query_type": 'random',
+#     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+#     "victim": { "data": CIFAR_10,  "model_name": RESNET34 },
+#     "attacker": RESNET34
+# }
+
+# parameters = {
+#         "query_size": [10000, 20000, 30000, 40000, 10000],
+#         "query_type": ['random','coreset', 'coreset_cross'],
+#         "victim":[{ "data": CIFAR_10, "model_name": VGG19_BN}],
+#         "attacker":[RESNET34]
+# }
+
+# ### Run3 - CIFAR100 - A_RESNET34 (tbr)
+
+# config = {
+#     "batch_size": 500,
+#     "learning_rate": 0.008,
+#     "epochs": 80,
+#     "query_size":10000,
+#     "query_type": 'random',
+#     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+#     "victim": { "data": CIFAR_100,  "model_name": RESNET_52 },
+#     "attacker": RESNET34
+# }
+
+# parameters = {
+#         "query_size": [10000, 20000, 30000, 40000, 10000],
+#         "query_type": ['random','coreset', 'coreset_cross'],
+#         "victim":[{ "data": CIFAR_100, "model_name": VGG19_BN}, {"data": CIFAR_100, "model_name": RESNET_56 } ],
+#         "attacker":[RESNET34]
+# }
+
+# ## Best Attacker, Worst Victim
+
+# ### Run1 - CIFAR10 - Best Query
 
 #
 
