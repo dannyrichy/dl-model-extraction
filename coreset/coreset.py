@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
+import torchvision.models as models
 import matplotlib.pyplot as plt
-import numpy as np
 
 # use GPU if available
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -74,25 +74,10 @@ test_dataloader = torch.utils.data.DataLoader(test_dataset,
                                                batch_size=n_batch, 
                                                num_workers=2)
 
-# convnet to obtain coreset
-class ConvNet(nn.Module):
-    def __init__(self, n_classes):
-        super().__init__()
-        self.network = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=5),
-            nn.MaxPool2d(2, 2),
-            nn.Conv2d(16, 32, kernel_size=3),
-            nn.MaxPool2d(2, 2),
-            nn.Flatten(), 
-            nn.Linear(1152, 512),
-            nn.ReLU(),
-            nn.Linear(512, n_classes))
-        
-    def forward(self, x):
-        return self.network(x)
-    
-# create model
-model = ConvNet(n_classes)
+# load model
+model    = models.resnet18()
+model.fc = nn.Linear(512, n_classes)
+
 model = model.to(device)
 
 # Set Loss function with criterion
@@ -100,7 +85,7 @@ criterion     = nn.CrossEntropyLoss()
 cross_entropy = nn.CrossEntropyLoss(reduction='none')
 
 # Set optimizer with optimizer
-optimizer     = torch.optim.Adam(model.parameters(), lr=1e-4)  
+optimizer     = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 # training
 ent_idx_dict  = {}
@@ -142,9 +127,9 @@ for epoch in range(n_epoch):
             labels_list.append(labels)
     
     if epoch == n_epoch-1:
-        entropy_list  = torch.cat(entropy_list).cpu()
-        centropy_list = torch.cat(centropy_list).cpu()
-        labels_list   = torch.cat(labels_list).cpu()
+        entropy_list  = torch.cat(entropy_list)
+        centropy_list = torch.cat(centropy_list)
+        labels_list   = torch.cat(labels_list)
     
         values, ind  = torch.sort(entropy_list, descending=True)
         for i in ind:
@@ -156,7 +141,7 @@ for epoch in range(n_epoch):
     print(f'Epoch [{epoch+1}/{n_epoch}], Loss: {loss.item()}, Train acc: {100*correct/total}')
 
 # save model
-torch.save(model.state_dict(), 'results/cifar100_convnet_model')
+torch.save(model.state_dict(), 'Results/cifar10_resnet18')
 
 # save the indices
 import pickle
