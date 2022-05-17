@@ -5,21 +5,18 @@ from attacker.utils import *
 from victim.interface import fetch_logits
 
 
-def QueryVictim(victim, trainloader, query_size, sampling=None):
+def QueryVictim(victim, trainloader, query_size, query_type=None):
     # create sampleset from trainloader
     dataset = trainloader.dataset
-    if(sampling=='random'):
+    if(query_type=='random'):
         indices = np.random.default_rng().choice(len(dataset), size=query_size, replace=False)
-    elif(sampling=='coreset'):
-        indices = LoadCoreset('cifar10_entropy_index_19')
-        indices = indices[:query_size]
-    elif(sampling=='coreset_cross'):
-        indices = LoadCoreset('cifar10_cross_entropy_index_19')
+    elif(query_type=='coreset' or query_type=='coreset_cross'):
+        indices = LoadCoreset(victim["data"], query_type)
         indices = indices[:query_size]
     else:
         indices = np.arange(query_size)
     dataset = torch.utils.data.Subset(dataset, indices)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=config['batch_size'], shuffle=True)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=config['batch_size'], shuffle=False)
     assert len(dataloader.dataset) == query_size,"Sampled dataset not equal to query size"
     assert len(dataloader.dataset[0]) == len(trainloader.dataset[0]), "Sampled dimenions don't match input"
 
@@ -39,9 +36,9 @@ def QueryVictim(victim, trainloader, query_size, sampling=None):
     # create queryset   
     querydataset = torch.utils.data.TensorDataset(torch.cat(X), torch.cat(Y))
     queryloader = torch.utils.data.DataLoader(querydataset, batch_size=config['batch_size'], shuffle=True)
-    assert len(queryloader.dataset) == query_size,"Queried Dataloader not equal to query size"
-    assert len(queryloader.dataset[0]) == len(trainloader.dataset[0]),"Queried Dataloader dimension are wrong"
-    print(f'\nInput dataset:{len(trainloader.dataset)}, Queried dataset:{len(queryloader.dataset)}')
+    assert len(queryloader.dataset) == query_size,"Queried dataloader not equal to query size"
+    assert len(queryloader.dataset[0]) == len(trainloader.dataset[0]),"Queried dataloader dimension are wrong"
+    print(f'\r    - input:{len(trainloader.dataset)} queried:{len(queryloader.dataset), len(queryloader.dataset[0])}')
     return queryloader
 
 # # archived: query victim model directly
