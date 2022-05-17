@@ -2,7 +2,6 @@ import torch
 import numpy as np
 from torch import nn
 from torchsummary import summary
-import matplotlib.pyplot as plt
 from attacker.config import *
 
 # # ResBlock:
@@ -89,6 +88,8 @@ class ResNet34(nn.Module):
 # check_model.to(torch.device("cuda:0" if torch.cuda.is_available() else "cpu"))
 # summary(check_model, (3,224,224))
 
+# # Training Resnet Model
+
 def Training(model, train_loader, test_loader, input_shape, epochs, optimizer, loss):
     train_acc = []
     train_loss = []
@@ -126,6 +127,7 @@ def Training(model, train_loader, test_loader, input_shape, epochs, optimizer, l
         train_loss.append(train_loss_func.data)
         print("\r    - train_acc %.5f train_loss %.5f" %
                   (train_acc[-1], train_loss[-1]))
+        #if(epoch%(int(epochs/4))==0): print(model.L0[0].weight)
 
         # Test Data
         num_test = 0
@@ -149,24 +151,3 @@ def Training(model, train_loader, test_loader, input_shape, epochs, optimizer, l
         print("\r    - test_acc  %.5f test_loss  %.5f" %
                 (test_acc[-1], test_loss[-1]))
     return train_loss, train_acc, test_loss, test_acc
-
-
-# visualization
-def plots(result, model_name):
-  (train_loss, train_acc, test_loss, test_acc) = result
-  plt.plot(range(config["epochs"]), train_loss, 'b-', label='Train_loss')
-  plt.plot(range(config["epochs"]), test_loss, 'g-', label='Test_loss')
-  plt.title(f'{model_name} - Loss')
-  plt.xlabel('Epochs')
-  plt.ylabel('Loss')
-  plt.legend()
-  plt.savefig(f'{model_name}_Loss')
-  plt.show()
-  plt.plot(range(config["epochs"]), train_acc, 'b-', label='Train_accuracy')
-  plt.plot(range(config["epochs"]), test_acc, 'g-', label='Test_accuracy')
-  plt.title(f'{model_name} - Accuracy')
-  plt.xlabel('Epochs')
-  plt.ylabel('Accuracy')
-  plt.legend()
-  plt.savefig(f'{model_name}_Accuracy')
-  plt.show()
