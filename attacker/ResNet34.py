@@ -1,7 +1,11 @@
+# +
 import torch
 import numpy as np
 from torch import nn
 from torchsummary import summary
+
+# REF: https://towardsdev.com/implement-resnet-with-pytorch-a9fb40a77448
+# -
 
 # # ResBlock:
 # conv2 without maxpooling 

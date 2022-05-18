@@ -88,7 +88,7 @@ config = {
     "query_size":10000,
     "query_type": 'random',
     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-    "victim": { "data": CIFAR_100,  "model_name": RESNET_56 },
+    "victim": {"data": CIFAR_10, "model_name": VGG19_BN},
     "attacker": RESNET34
 }
 

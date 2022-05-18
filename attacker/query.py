@@ -6,13 +6,17 @@ from attacker.utils import *
 from victim.interface import fetch_logits
 
 
-def QueryVictim(victim, outputs, trainloader, query_size, query_type=None):
+def QueryVictim(victim, outputs, trainloader, query_size, query_type=None, train=True):
     # update filename
-    filename = f'attacker/queried/query_data_{victim["data"]}_{victim["model_name"]}.pt'
+    if(train==True):
+        filename = f'queried/query_traindata_{victim["data"]}_{victim["model_name"]}.pt'
+    else:
+        filename = f'queried/query_testdata_{victim["data"]}_{victim["model_name"]}.pt'
     # load data if file exists:
     if(os.path.exists(os.path.join(os.getcwd(),filename))):
         print(f'Loading queried {victim["data"]} dataset with {victim["model_name"]} victim')
         queryloader = torch.load(filename)
+        print(f'    - input:{len(trainloader.dataset)} queried:{len(queryloader.dataset)}')
     else:
         # query and save data
         queryloader = QueryVictimDataset(victim, trainloader)
@@ -68,7 +72,7 @@ def QueryType(victim, outputs, queryloader, query_size, query_type=None):
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=config['batch_size'], shuffle=True)
     assert len(dataloader.dataset) == query_size,"Sampled dataset not equal to query size"
     assert len(dataloader.dataset[0]) == len(queryloader.dataset[0]), "Sampled dimenions don't match input"
-    print(f'\r    - input:{len(queryloader.dataset)} sampled:{len(dataloader.dataset)}')
+    print(f'    - input:{len(queryloader.dataset)} sampled:{len(dataloader.dataset)}')
     return dataloader
 
 # # archived: query victim model directly
