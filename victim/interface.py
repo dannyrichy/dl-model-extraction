@@ -1,6 +1,7 @@
 import victim.cifar100_interface as cifar100
 import victim.cifar10_interface as cifar10
 from victim import *
+import torch
 
 
 def fetch_logits(args=None, query_img=None):
@@ -54,7 +55,13 @@ def fetch_logits(args=None, query_img=None):
         # args = parser.parse_args()
     if args["data"] == CIFAR_10:
         model = cifar10._helper(args)
+        device = torch.device("cuda:0")
+        model.to(device)
         return model.model(query_img)
     elif args["data"] == CIFAR_100:
         model = cifar100._helper(args)
+        device = torch.device("cuda:0")
+        model.to(device)
         return model(query_img)
+
+
