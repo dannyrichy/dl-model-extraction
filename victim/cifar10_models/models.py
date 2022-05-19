@@ -26,16 +26,16 @@ all_classifiers = {
 
 
 class CIFAR10Module(pl.LightningModule):
-    def __init__(self, hparams):
+    def __init__(self, params):
         super().__init__()
         # self.hparams = hparams
-        self.lr = hparams["learning_rate"]
-        self.weight_decay = hparams["weight_decay"]
-        self.max_epochs = hparams["max_epochs"]
+        self.lr = params["learning_rate"]
+        self.weight_decay = params["weight_decay"]
+        self.max_epochs = params["max_epochs"]
         self.criterion = torch.nn.CrossEntropyLoss()
         self.accuracy = Accuracy()
 
-        self.model = all_classifiers[hparams["model_name"]]
+        self.model = all_classifiers[params["model_name"]]
 
     def forward(self, batch):
         images, labels = batch

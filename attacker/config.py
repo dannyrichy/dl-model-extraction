@@ -1,4 +1,6 @@
 import torch
+
+from utils import DEVICE
 from victim.__init__ import *
 
 # config = {
@@ -129,7 +131,7 @@ config = {
     "epochs": 80,
     "query_size":10000,
     "query_type": 'random',
-    "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+    "device": DEVICE,
     "victim": { "data": CIFAR_100,  "model_name": RESNET_56 },
     "attacker": RESNET34
 }

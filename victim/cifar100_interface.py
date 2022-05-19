@@ -1,7 +1,7 @@
 from victim.pytorch_cifar_models import resnet, vgg, repvgg, shufflenetv2, mobilenetv2, vit
 
 
-def _helper(args_dict):
+def model_builder(args_dict):
     if args_dict["model_name"].startswith("resnet"):
         return getattr(resnet, f"{args_dict['data']}_{args_dict['model_name']}")()
     elif args_dict["model_name"].startswith("repvgg"):
