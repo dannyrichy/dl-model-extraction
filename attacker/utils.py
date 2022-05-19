@@ -46,7 +46,7 @@ def get_dataset(data_type):
         outputs = 100
     elif data_type == OOD:
         data_type = OODDataset()
-        train_size = 0.75 * len(data_type)
+        train_size = int(0.75 * len(data_type))
         train_set, test_set = random_split(data_type, [train_size, len(data_type) - train_size])
         outputs = 10
 
@@ -62,7 +62,6 @@ def get_dataloader(data_type):
     test_loader = DataLoader(test_set, batch_size=config['batch_size'], shuffle=False)
 
     return train_loader, test_loader, outputs
-
 
 
 # Load Indices from saved corset algorithms
