@@ -13,4 +13,4 @@ def _path_generator(model_file):
 
 
 def _entropy_calculate(log_its):
-    return Categorical(torch.nn.Softmax(log_its)).entropy()
+    return Categorical(torch.nn.Softmax(dim=1)(log_its)).entropy()
