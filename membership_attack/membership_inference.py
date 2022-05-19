@@ -24,7 +24,9 @@ def _attacker(attacker, train_set, test_set, ood_dataset, indices_path, model_pa
             for x0, _ in DataLoader(d_set, batch_size=1, shuffle=False,
                                     collate_fn=lambda x: tuple(x_.to(DEVICE) for x_ in default_collate(x)))
         ],
-        "ood": [_entropy_calculate(model(x0)[0]) for x0, _ in DataLoader(ood_dataset, batch_size=1, shuffle=False,
+        "ood": [_entropy_calculate(model(x0)[0]) 
+            for d_set in ood_dataset:
+            for x0, _ in DataLoader(d_set, batch_size=1, shuffle=False,
                                                                          collate_fn=lambda x: tuple(x_.to(DEVICE) for x_ in default_collate(x)))],
     }
 
@@ -38,15 +40,16 @@ def _victim(victim_args, train_set, test_set, ood_dataset):
                                     collate_fn=lambda x: tuple(x_.to(DEVICE) for x_ in default_collate(x)))
         ],
         "ood": [_entropy_calculate(fetch_logits(victim_args, x0))
-                for x0, _ in DataLoader(ood_dataset, batch_size=1, shuffle=False,
+                for  d_set in ood_dataset:
+                for x0, _ in DataLoader(d_set, batch_size=1, shuffle=False,
                                         collate_fn=lambda x: tuple(x_.to(DEVICE) for x_ in default_collate(x)))],
     }
 
 
 def generate_results(victim_args, attacker, indices_path, model_path, data_type):
     train_set, test_set, outputs = get_dataset(data_type)
-    ood_dataset = get_dataset(OOD)
-    attacker_result = _attacker(attacker, train_set, test_set, ood_dataset, indices_path, model_path)
-    victim_result = _victim(victim_args, train_set, test_set, ood_dataset)
+    ood_dataset  = get_dataset(OOD)
+    attacker_result = _attacker(attacker, train_set, test_set, ood_dataset[:2], indices_path, model_path)
+    victim_result = _victim(victim_args, train_set, test_set, ood_dataset[:2])
 
     return attacker_result, victim_result
