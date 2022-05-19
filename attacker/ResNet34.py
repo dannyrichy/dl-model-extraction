@@ -1,8 +1,7 @@
 # +
 import torch
-import numpy as np
 from torch import nn
-from torchsummary import summary
+
 
 # REF: https://towardsdev.com/implement-resnet-with-pytorch-a9fb40a77448
 # -
@@ -35,12 +34,9 @@ class ResBlock(nn.Module):
     input = input + shortcut
     return nn.ReLU()(input)
 
-# # ResNet 34
-#
-#
 
 class ResNet34(nn.Module):
-  def __init__(self, in_channels, ResBlock, outputs=1000):
+  def __init__(self, in_channels, outputs=1000):
     super().__init__()
 
     self.L0 = nn.Sequential(
