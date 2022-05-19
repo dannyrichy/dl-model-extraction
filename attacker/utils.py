@@ -3,10 +3,12 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import torchvision
+from torch.utils.data import DataLoader, random_split
 
 from attacker.ResNet34 import *
 from attacker.config import *
-from victim.__init__ import *
+from ood.dataset import OODDataset
+from victim import *
 
 
 # set seed for all packages
@@ -20,46 +22,63 @@ def set_seed(seed):
 # Download and load datasets from Pytorch
 
 # Download and use dataset
-def getDataset(dataset):
+def get_dataset(data_type):
+    """
+
+    :param data_type:
+    :type data_type: str
+    :return: torch.utils.data.DataLoader, torch.utils.data.DataLoader, int
+    :rtype:
+    """
     # Normalizing transform
     transform = torchvision.transforms.Compose(
         [torchvision.transforms.ToTensor(),
          torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
     # select dataset
-    if (dataset == CIFAR_10):
-        trainset = torchvision.datasets.CIFAR10(root='./cifar10', train=True, download=True, transform=transform)
-        testset = torchvision.datasets.CIFAR10(root='./cifar10', train=False, download=True, transform=transform)
+    if data_type == CIFAR_10:
+        train_set = torchvision.datasets.CIFAR10(root='./cifar10', train=True, download=True, transform=transform)
+        test_set = torchvision.datasets.CIFAR10(root='./cifar10', train=False, download=True, transform=transform)
         outputs = 10
-    elif (dataset == CIFAR_100):
-        trainset = torchvision.datasets.CIFAR100(root='./cifar100', train=True, download=True, transform=transform)
-        testset = torchvision.datasets.CIFAR100(root='./cifar100', train=False, download=True, transform=transform)
+    elif data_type == CIFAR_100:
+        train_set = torchvision.datasets.CIFAR100(root='./cifar100', train=True, download=True, transform=transform)
+        test_set = torchvision.datasets.CIFAR100(root='./cifar100', train=False, download=True, transform=transform)
         outputs = 100
+    elif data_type == OOD:
+        data_type = OODDataset()
+        train_size = int(0.75 * len(data_type))
+        train_set, test_set = random_split(data_type, [train_size, len(data_type) - train_size])
+        outputs = 10
+
     else:
         raise Exception("Dataset not configured!")
 
-    # uplaod to data loader
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=config['batch_size'], shuffle=True)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=config['batch_size'], shuffle=False)
+    return train_set, test_set, outputs
 
-    return trainloader, testloader, outputs
+
+def get_dataloader(data_type):
+    train_set, test_set, outputs = get_dataset(data_type)
+    train_loader = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True)
+    test_loader = DataLoader(test_set, batch_size=config['batch_size'], shuffle=False)
+
+    return train_loader, test_loader, outputs
 
 
 # Load Indices from saved corset algorithms
 
-def LoadCoreset(dataset, query_type):
+def load_coreset(dataset, query_type):
     # select filename
-    if (query_type == 'coreset'):
-        if (dataset == CIFAR_10):
+    if query_type == 'coreset':
+        if dataset == CIFAR_10:
             filename = 'cifar10_entropy_dict'
-        elif (dataset == CIFAR_100):
+        elif dataset == CIFAR_100:
             filename = 'cifar100_entropy_dict'
         else:
             raise Exception("Dataset is not configured for coreset!")
-    elif (query_type == 'coreset_cross'):
-        if (dataset == CIFAR_10):
+    elif query_type == 'coreset_cross':
+        if dataset == CIFAR_10:
             filename = 'cifar10_cross_entropy_dict'
-        elif (dataset == CIFAR_100):
+        elif dataset == CIFAR_100:
             filename = 'cifar100_cross_entropy_dict'
         else:
             raise Exception("Dataset is not configured for coreset cross!")
@@ -68,14 +87,14 @@ def LoadCoreset(dataset, query_type):
 
     # Open file and load data
     with open('attacker/coreset/' + filename, 'rb') as fo:
-        dict = pickle.load(fo)
-    return dict
+        indices = pickle.load(fo)
+    return indices
 
 
 # Get one of the attacker models
 
 # select Model
-def getModel(model_name, outputs):
+def get_model(model_name, outputs):
     if model_name == RESNET34:
         model = ResNet34(3, outputs=outputs)
     elif model_name == RESNET50:
@@ -89,11 +108,12 @@ def getModel(model_name, outputs):
 
 # Train the models
 
-def Training(model, train_loader, test_loader, input_shape, epochs, optimizer, loss):
+def training(model, train_loader, test_loader, epochs, optimizer, loss):
     train_acc = []
     train_loss = []
     test_acc = []
     test_loss = []
+    train_loss_func = None
     for epoch in range(epochs):
         num_train = 0
         num_correct_train = 0
@@ -155,7 +175,7 @@ def Training(model, train_loader, test_loader, input_shape, epochs, optimizer, l
 # Save and Visualize all results
 
 # visualization
-def SaveVisualize(model, result, title):
+def save_visualize(model, result, title):
     (train_loss, train_acc, test_loss, test_acc) = result
 
     # save everything
@@ -190,4 +210,4 @@ def SaveVisualize(model, result, title):
     test_l = np.round_(test_loss[len(test_loss) - 1].cpu().numpy(), 4)
     test_a = np.round_(test_acc[len(test_acc) - 1].cpu().numpy() * 100, 2)
 
-    return (train_l, train_a, test_l, test_a)
+    return train_l, train_a, test_l, test_a

@@ -4,6 +4,7 @@ Target: Inception/ ResNet-50
 """
 CIFAR_10 = "cifar_10"
 CIFAR_100 = "cifar100"
+OOD = "ood"
 
 # CIFAR 10 models
 VGG11_BN = 'vgg11_bn'

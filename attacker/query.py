@@ -1,10 +1,12 @@
 import os
 
+from torch.utils.data import TensorDataset
+
 from attacker.utils import *
 from victim.interface import fetch_logits
 
 
-def QueryVictim(victim, outputs, trainloader, query_size, query_type=None, train=True):
+def query_victim(victim, outputs, train_loader, query_size, q_type=None, train=True):
     # update filename
     if train:
         filename = f'queried/query_traindata_{victim["data"]}_{victim["model_name"]}'
@@ -13,15 +15,15 @@ def QueryVictim(victim, outputs, trainloader, query_size, query_type=None, train
     # load data if file exists:
     if os.path.exists(os.path.join(os.getcwd(), filename) + '.pt'):
         print(f'Loading queried {victim["data"]} dataset with {victim["model_name"]} victim')
-        queryloader = torch.load(filename + '.pt')
-        print(f'    - input:{len(trainloader.dataset)} queried:{len(queryloader.dataset)}')
+        query_loader = torch.load(filename + '.pt')
+        print(f'    - input:{len(train_loader.dataset)} queried:{len(query_loader.dataset)}')
     else:
         # query and save data
-        queryloader = query_victim_dataset(victim, trainloader)
-        torch.save(queryloader, filename + '.pt')
+        query_loader = query_victim_dataset(victim, train_loader)
+        torch.save(query_loader, filename + '.pt')
 
     # sample data
-    dataloader = query_type(victim, outputs, queryloader, query_size, filename, query_type=query_type)
+    dataloader = query_type(victim, outputs, query_loader, query_size, filename, query_type=q_type)
     return dataloader
 
 
@@ -43,12 +45,12 @@ def query_victim_dataset(victim, train_loader):
         print('\r %d ...' % cntr, end='')
 
     # create queryset   
-    querydataset = torch.utils.data.TensorDataset(torch.cat(X), torch.cat(Y))
-    queryloader = torch.utils.data.DataLoader(querydataset, batch_size=config['batch_size'], shuffle=False)
-    assert len(queryloader.dataset) == len(train_loader.dataset), "Queried dataloader not equal to query size"
-    assert len(queryloader.dataset[0]) == len(train_loader.dataset[0]), "Queried dataloader dimension are wrong"
-    print(f'\r    - input:{len(train_loader.dataset)} queried:{len(queryloader.dataset)}')
-    return queryloader
+    query_dataset = TensorDataset(torch.cat(X), torch.cat(Y))
+    query_loader = DataLoader(query_dataset, batch_size=config['batch_size'], shuffle=False)
+    assert len(query_loader.dataset) == len(train_loader.dataset), "Queried dataloader not equal to query size"
+    assert len(query_loader.dataset[0]) == len(train_loader.dataset[0]), "Queried dataloader dimension are wrong"
+    print(f'\r    - input:{len(train_loader.dataset)} queried:{len(query_loader.dataset)}')
+    return query_loader
 
 
 # Sample dataset using query-type and size
@@ -59,7 +61,7 @@ def query_type(victim, outputs, queryloader, query_size, filename, query_type=No
     if query_type == 'random':
         indices = np.random.default_rng().choice(len(dataset), size=query_size, replace=False)
     elif query_type == 'coreset' or query_type == 'coreset_cross':
-        ind_dict = LoadCoreset(victim["data"], query_type)
+        ind_dict = load_coreset(victim["data"], query_type)
         class_query_size = int(query_size / outputs)
         indices = []
         for label in ind_dict.values():
