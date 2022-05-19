@@ -17,22 +17,22 @@ def QueryVictim(victim, outputs, trainloader, query_size, query_type=None, train
         print(f'    - input:{len(trainloader.dataset)} queried:{len(queryloader.dataset)}')
     else:
         # query and save data
-        queryloader = QueryVictimDataset(victim, trainloader)
+        queryloader = query_victim_dataset(victim, trainloader)
         torch.save(queryloader, filename + '.pt')
 
     # sample data
-    dataloader = QueryType(victim, outputs, queryloader, query_size, filename, query_type=query_type)
+    dataloader = query_type(victim, outputs, queryloader, query_size, filename, query_type=query_type)
     return dataloader
 
 
 # Query Victim on given dataset
-def QueryVictimDataset(victim, trainloader):
+def query_victim_dataset(victim, train_loader):
     # query victim
     print(f'Query {victim["model_name"]} victim on {victim["data"]} dataset')
     X = []
     Y = []
     cntr = 0
-    for (xList, _) in trainloader:
+    for (xList, _) in train_loader:
         if torch.cuda.is_available():
             xList = xList.type(torch.cuda.FloatTensor)
         yList = fetch_logits(args=victim, query_img=xList)
@@ -45,14 +45,14 @@ def QueryVictimDataset(victim, trainloader):
     # create queryset   
     querydataset = torch.utils.data.TensorDataset(torch.cat(X), torch.cat(Y))
     queryloader = torch.utils.data.DataLoader(querydataset, batch_size=config['batch_size'], shuffle=False)
-    assert len(queryloader.dataset) == len(trainloader.dataset), "Queried dataloader not equal to query size"
-    assert len(queryloader.dataset[0]) == len(trainloader.dataset[0]), "Queried dataloader dimension are wrong"
-    print(f'\r    - input:{len(trainloader.dataset)} queried:{len(queryloader.dataset)}')
+    assert len(queryloader.dataset) == len(train_loader.dataset), "Queried dataloader not equal to query size"
+    assert len(queryloader.dataset[0]) == len(train_loader.dataset[0]), "Queried dataloader dimension are wrong"
+    print(f'\r    - input:{len(train_loader.dataset)} queried:{len(queryloader.dataset)}')
     return queryloader
 
 
 # Sample dataset using query-type and size
-def QueryType(victim, outputs, queryloader, query_size, filename, query_type=None):
+def query_type(victim, outputs, queryloader, query_size, filename, query_type=None):
     # create sampleset from queryloader
     print(f'Sample using {query_type} with query size {query_size}')
     dataset = queryloader.dataset
