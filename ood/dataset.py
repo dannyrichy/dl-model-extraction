@@ -1,56 +1,20 @@
 from __future__ import print_function
 
-import cv2
-import torchvision.transforms as transforms
-from torch.utils.data import Dataset, random_split
-from tqdm import tqdm
-
-
-from PIL import Image
 import os
 import os.path
-import numpy as np
-import sys
 import pickle
 
+import cv2
+import numpy as np
 import torch.utils.data as data
+import torchvision.transforms as transforms
+from PIL import Image
 
 CLASS_NAMES = ['air_plane', 'car', 'bird', 'cat',
                'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
-# +
-# class ImageDataset(Dataset):
-#     def __init__(self, img_folder=os.path.join(os.getcwd(), "images")):
-#         self.transform = transforms.Compose([
-#             transforms.ToPILImage(),
-#             transforms.Resize((32, 32)),
-#             transforms.ToTensor()
-#         ])
-#         self.img_folder = img_folder
 
-#         self.image_names = [os.path.join(i, j) for i in os.listdir(self.img_folder) for j in os.listdir(os.path.join(self.img_folder, i))]
-#         self.labels = [CLASS_NAMES.index(i) for i in os.listdir(self.img_folder)]
-
-#     # The __len__ function returns the number of samples in our dataset.
-#     def __len__(self):
-#         return len(self.image_names)
-
-#     def __getitem__(self, index):
-#         image = cv2.imread(os.path.join(self.img_folder, self.image_names[index]))
-#         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-#         image = self.transform(image)
-#         targets = self.labels[index]
-
-#         # sample = {'image': image, 'labels': targets}
-
-#         return image, targets
-# -
-
-
-
-
-class ImageNetDownSample(data.Dataset):
+class OODDataset(data.Dataset):
     """`DownsampleImageNet`_ Dataset.
     Args:
         root (string): Root directory of dataset where directory
@@ -65,22 +29,22 @@ class ImageNetDownSample(data.Dataset):
             downloaded again
     """
     map_dict = {
-        404:0,
-        436:1,
-        734:1,
-        8:2,
-        18:2,
-        284:3,
-        285:3,
-        207:5,
-        208:5,
-        30:6,
-        32:6,
-        510:8,
-        724:8,
-        569:9,
-        867:9
-        }
+        404: 0,
+        436: 1,
+        734: 1,
+        8: 2,
+        18: 2,
+        284: 3,
+        285: 3,
+        207: 5,
+        208: 5,
+        30: 6,
+        32: 6,
+        510: 8,
+        724: 8,
+        569: 9,
+        867: 9
+    }
     train_list = [
         ['train_data_batch_1'],
         ['train_data_batch_2'],
@@ -92,12 +56,12 @@ class ImageNetDownSample(data.Dataset):
         ['train_data_batch_8'],
         ['train_data_batch_9'],
         ['train_data_batch_10']
-#         ['val_data']
+        #         ['val_data']
     ]
     test_list = [
     ]
 
-    def __init__(self, root="/home/shared/ood", img_folder = "/home/shared/extended_dataset",
+    def __init__(self, root="/home/shared/ood", img_folder="/home/shared/extended_dataset",
                  transform=transforms.ToTensor(), target_transform=None):
         self.root = os.path.expanduser(root)
         self.transform1 = transforms.ToTensor()
@@ -124,9 +88,9 @@ class ImageNetDownSample(data.Dataset):
             entry = pickle.load(fo)
             tmp = list()
             for ix, lbl in enumerate(entry['labels']):
-                if lbl-1 in self.map_dict.keys():
+                if lbl - 1 in self.map_dict.keys():
                     tmp.append(entry['data'][ix, :])
-                    self.train_labels += [self.map_dict[lbl-1]]
+                    self.train_labels += [self.map_dict[lbl - 1]]
             self.train_data.append(np.stack(tmp))
             fo.close()
 
@@ -135,7 +99,6 @@ class ImageNetDownSample(data.Dataset):
         pixel = int(np.sqrt(pixel / 3))
         self.train_data = self.train_data.reshape((picnum, 3, pixel, pixel))
         self.train_data = self.train_data.transpose((0, 2, 3, 1))  # convert to HWC
-        
 
     def __getitem__(self, index):
         """
@@ -144,7 +107,7 @@ class ImageNetDownSample(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        if index<18938:
+        if index < 18938:
             img, target = self.train_data[index], self.train_labels[index]
             img = Image.fromarray(img)
 
@@ -154,17 +117,16 @@ class ImageNetDownSample(data.Dataset):
                 target = self.target_transform(target)
 
             return img, target
-        elif index<24027:
-            image = cv2.imread(os.path.join(self.img_folder, self.image_names[index-18938]))
+        elif index < 24027:
+            image = cv2.imread(os.path.join(self.img_folder, self.image_names[index - 18938]))
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
             image = self.transform2(image)
-            targets = self.labels[index-18938]
+            targets = self.labels[index - 18938]
 
             # sample = {'image': image, 'labels': targets}
 
             return image, targets
-            
 
     def __len__(self):
         return len(self.train_data) + len(self.image_names)
@@ -173,12 +135,4 @@ class ImageNetDownSample(data.Dataset):
         fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
         fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
         return fmt_str
-
-
-def fetch_data_set(train_set_perc=0.75, download=True):
-    dataset = ImageDataset()
-    size = train_set_perc * len(dataset)
-    train_set, valid_set = random_split(dataset, [train_set_perc * size, size - train_set_perc * size])
-    return train_set, valid_set
-
 

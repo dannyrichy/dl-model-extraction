@@ -13,15 +13,15 @@ def query_victim(victim, outputs, train_loader, query_size, q_type=None, train=T
     # load data if file exists:
     if os.path.exists(os.path.join(os.getcwd(), filename) + '.pt'):
         print(f'Loading queried {victim["data"]} dataset with {victim["model_name"]} victim')
-        queryloader = torch.load(filename + '.pt')
-        print(f'    - input:{len(train_loader.dataset)} queried:{len(queryloader.dataset)}')
+        query_loader = torch.load(filename + '.pt')
+        print(f'    - input:{len(train_loader.dataset)} queried:{len(query_loader.dataset)}')
     else:
         # query and save data
-        queryloader = query_victim_dataset(victim, train_loader)
-        torch.save(queryloader, filename + '.pt')
+        query_loader = query_victim_dataset(victim, train_loader)
+        torch.save(query_loader, filename + '.pt')
 
     # sample data
-    dataloader = q_type(victim, outputs, queryloader, query_size, filename, query_type=q_type)
+    dataloader = q_type(victim, outputs, query_loader, query_size, filename, query_type=q_type)
     return dataloader
 
 
@@ -59,7 +59,7 @@ def query_type(victim, outputs, queryloader, query_size, filename, query_type=No
     if query_type == 'random':
         indices = np.random.default_rng().choice(len(dataset), size=query_size, replace=False)
     elif query_type == 'coreset' or query_type == 'coreset_cross':
-        ind_dict = LoadCoreset(victim["data"], query_type)
+        ind_dict = load_coreset(victim["data"], query_type)
         class_query_size = int(query_size / outputs)
         indices = []
         for label in ind_dict.values():
