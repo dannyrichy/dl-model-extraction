@@ -4,7 +4,7 @@ from attacker.utils import *
 from victim.interface import fetch_logits
 
 
-def QueryVictim(victim, outputs, trainloader, query_size, query_type=None, train=True):
+def query_victim(victim, outputs, train_loader, query_size, q_type=None, train=True):
     # update filename
     if train:
         filename = f'queried/query_traindata_{victim["data"]}_{victim["model_name"]}'
@@ -14,14 +14,14 @@ def QueryVictim(victim, outputs, trainloader, query_size, query_type=None, train
     if os.path.exists(os.path.join(os.getcwd(), filename) + '.pt'):
         print(f'Loading queried {victim["data"]} dataset with {victim["model_name"]} victim')
         queryloader = torch.load(filename + '.pt')
-        print(f'    - input:{len(trainloader.dataset)} queried:{len(queryloader.dataset)}')
+        print(f'    - input:{len(train_loader.dataset)} queried:{len(queryloader.dataset)}')
     else:
         # query and save data
-        queryloader = query_victim_dataset(victim, trainloader)
+        queryloader = query_victim_dataset(victim, train_loader)
         torch.save(queryloader, filename + '.pt')
 
     # sample data
-    dataloader = query_type(victim, outputs, queryloader, query_size, filename, query_type=query_type)
+    dataloader = q_type(victim, outputs, queryloader, query_size, filename, query_type=q_type)
     return dataloader
 
 
