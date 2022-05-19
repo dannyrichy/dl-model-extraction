@@ -22,34 +22,47 @@ def set_seed(seed):
 # Download and load datasets from Pytorch
 
 # Download and use dataset
-def get_dataset(dataset):
+def get_dataset(data_type):
+    """
+
+    :param data_type:
+    :type data_type: str
+    :return: torch.utils.data.DataLoader, torch.utils.data.DataLoader, int
+    :rtype:
+    """
     # Normalizing transform
     transform = torchvision.transforms.Compose(
         [torchvision.transforms.ToTensor(),
          torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
     # select dataset
-    if dataset == CIFAR_10:
+    if data_type == CIFAR_10:
         train_set = torchvision.datasets.CIFAR10(root='./cifar10', train=True, download=True, transform=transform)
         test_set = torchvision.datasets.CIFAR10(root='./cifar10', train=False, download=True, transform=transform)
         outputs = 10
-    elif dataset == CIFAR_100:
+    elif data_type == CIFAR_100:
         train_set = torchvision.datasets.CIFAR100(root='./cifar100', train=True, download=True, transform=transform)
         test_set = torchvision.datasets.CIFAR100(root='./cifar100', train=False, download=True, transform=transform)
         outputs = 100
-    elif dataset == OOD:
-        dataset = OODDataset()
-        train_size = 0.75 * len(dataset)
-        train_set, test_set = random_split(dataset, [train_size, len(dataset) - train_size])
+    elif data_type == OOD:
+        data_type = OODDataset()
+        train_size = 0.75 * len(data_type)
+        train_set, test_set = random_split(data_type, [train_size, len(data_type) - train_size])
+        outputs = 10
 
     else:
         raise Exception("Dataset not configured!")
 
-    # uplaod to data loader
+    return train_set, test_set, outputs
+
+
+def get_dataloader(data_type):
+    train_set, test_set, outputs = get_dataset(data_type)
     train_loader = DataLoader(train_set, batch_size=config['batch_size'], shuffle=True)
     test_loader = DataLoader(test_set, batch_size=config['batch_size'], shuffle=False)
 
     return train_loader, test_loader, outputs
+
 
 
 # Load Indices from saved corset algorithms
@@ -96,7 +109,7 @@ def get_model(model_name, outputs):
 
 # Train the models
 
-def traning(model, train_loader, test_loader, input_shape, epochs, optimizer, loss):
+def training(model, train_loader, test_loader, epochs, optimizer, loss):
     train_acc = []
     train_loss = []
     test_acc = []

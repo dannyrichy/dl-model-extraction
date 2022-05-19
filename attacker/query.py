@@ -1,5 +1,7 @@
 import os
 
+from torch.utils.data import TensorDataset
+
 from attacker.utils import *
 from victim.interface import fetch_logits
 
@@ -21,7 +23,7 @@ def query_victim(victim, outputs, train_loader, query_size, q_type=None, train=T
         torch.save(query_loader, filename + '.pt')
 
     # sample data
-    dataloader = q_type(victim, outputs, query_loader, query_size, filename, query_type=q_type)
+    dataloader = query_type(victim, outputs, query_loader, query_size, filename, query_type=q_type)
     return dataloader
 
 
@@ -43,12 +45,12 @@ def query_victim_dataset(victim, train_loader):
         print('\r %d ...' % cntr, end='')
 
     # create queryset   
-    querydataset = torch.utils.data.TensorDataset(torch.cat(X), torch.cat(Y))
-    queryloader = torch.utils.data.DataLoader(querydataset, batch_size=config['batch_size'], shuffle=False)
-    assert len(queryloader.dataset) == len(train_loader.dataset), "Queried dataloader not equal to query size"
-    assert len(queryloader.dataset[0]) == len(train_loader.dataset[0]), "Queried dataloader dimension are wrong"
-    print(f'\r    - input:{len(train_loader.dataset)} queried:{len(queryloader.dataset)}')
-    return queryloader
+    query_dataset = TensorDataset(torch.cat(X), torch.cat(Y))
+    query_loader = DataLoader(query_dataset, batch_size=config['batch_size'], shuffle=False)
+    assert len(query_loader.dataset) == len(train_loader.dataset), "Queried dataloader not equal to query size"
+    assert len(query_loader.dataset[0]) == len(train_loader.dataset[0]), "Queried dataloader dimension are wrong"
+    print(f'\r    - input:{len(train_loader.dataset)} queried:{len(query_loader.dataset)}')
+    return query_loader
 
 
 # Sample dataset using query-type and size
