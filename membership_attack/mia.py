@@ -57,12 +57,12 @@ def _attacker(attacker, train_set, test_set, ood_dataset, indices_path, model_pa
 
     return {
         "in_sample": np.concatenate([
-            _entropy_calculate(model(x0)[0])
+            _entropy_calculate(model(x0))
             for d_set in [train_set]
             for x0, _ in DataLoader(d_set, batch_size=1, shuffle=False,
                                     collate_fn=lambda x: tuple(x_.to(DEVICE) for x_ in default_collate(x)))
         ]),
-        "ood": np.concatenate([_entropy_calculate(model(x0)[0])
+        "ood": np.concatenate([_entropy_calculate(model(x0))
                                for d_set in [ood_dataset[0], ood_dataset[1], test_set]
                                for x0, _ in DataLoader(d_set, batch_size=1, shuffle=False,
                                                        collate_fn=lambda x: tuple(x_.to(DEVICE) for x_ in default_collate(x)))]),
