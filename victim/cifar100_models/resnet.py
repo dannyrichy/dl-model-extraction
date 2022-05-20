@@ -136,7 +136,7 @@ class ResNet(nn.Module):
             self,
             block,
             layers,
-            num_classes=10,
+            num_classes=100,
             zero_init_residual=False,
             groups=1,
             width_per_group=64,
