@@ -40,7 +40,7 @@ def fetch_logits(args=None, query_img=None):
         model = cifar100.our_model(args)
         model.to(DEVICE)
         model.eval()
-        return model(query_img)
+        return model.model(query_img)
 
 
 def fetch_victim_model(args=None):
@@ -76,5 +76,5 @@ def fetch_victim_model(args=None):
         # model = cifar100.model_builder(args)
         model = cifar100.our_model(args)
         model.to(DEVICE)
-        model.eval()
-        return model
+        model.model.eval()
+        return model.model

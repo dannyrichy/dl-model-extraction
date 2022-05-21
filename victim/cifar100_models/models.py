@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
 import torch
 from torchmetrics import Accuracy
+from torchvision import transforms
 
 from victim.cifar100_models.densenet import densenet121, densenet161, densenet169
 from victim.cifar100_models.googlenet import googlenet
@@ -35,12 +36,13 @@ class CIFAR100Module(pl.LightningModule):
         self.train_size = train_size
         self.criterion = torch.nn.CrossEntropyLoss()
         self.accuracy = Accuracy()
+        self.transforms = transforms.Normalize((0.5071, 0.4867, 0.4408),(0.2675, 0.2565, 0.2761))
 
         self.model = all_classifiers[params["model_name"]]
 
     def forward(self, batch):
         images, labels = batch
-        predictions = self.model(images)
+        predictions = self.model(self.transforms(images))
         loss = self.criterion(predictions, labels)
         accuracy = self.accuracy(predictions, labels)
         return loss, accuracy * 100
