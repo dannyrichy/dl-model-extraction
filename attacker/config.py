@@ -133,7 +133,8 @@ config = {
     "query_type": 'random',
     "device": DEVICE,
     "victim": { "data": CIFAR_100,  "model_name": RESNET_56 },
-    "attacker": RESNET34
+    "attacker": RESNET34,
+    "klogits": 0
 }
 
 parameters = {
@@ -143,7 +144,8 @@ parameters = {
                   { "data": CIFAR_10, "model_name": VGG19_BN}, 
                   { "data": CIFAR_100, "model_name": VGG19_BN}, 
                   {"data": CIFAR_100, "model_name": RESNET_56 }],
-        "attacker":[RESNET34]
+        "attacker":[RESNET34],
+        "klogits": [0, 3, 10]
 }
 
 # ## Best Attacker, Worst Victim

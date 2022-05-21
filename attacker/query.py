@@ -6,12 +6,12 @@ from attacker.utils import *
 from victim.interface import fetch_logits
 
 
-def query_victim(victim, outputs, train_loader, query_size, q_type=None, train=True):
+def query_victim(victim, outputs, train_loader, query_size, k=0, q_type=None, train=True):
     # update filename
     if train:
-        filename = f'queried/query_traindata_{victim["data"]}_{victim["model_name"]}'
+        filename = f'queried/query_traindata_{victim["data"]}_{victim["model_name"]}_k{k}'
     else:
-        filename = f'queried/query_testdata_{victim["data"]}_{victim["model_name"]}'
+        filename = f'queried/query_testdata_{victim["data"]}_{victim["model_name"]}_k{k}'
     # load data if file exists:
     if os.path.exists(os.path.join(os.getcwd(), filename) + '.pt'):
         print(f'Loading queried {victim["data"]} dataset with {victim["model_name"]} victim')
@@ -19,7 +19,7 @@ def query_victim(victim, outputs, train_loader, query_size, q_type=None, train=T
         print(f'    - input:{len(train_loader.dataset)} queried:{len(query_loader.dataset)}')
     else:
         # query and save data
-        query_loader = query_victim_dataset(victim, train_loader)
+        query_loader = query_victim_dataset(victim, train_loader, k)
         torch.save(query_loader, filename + '.pt')
 
     # sample data
@@ -28,7 +28,7 @@ def query_victim(victim, outputs, train_loader, query_size, q_type=None, train=T
 
 
 # Query Victim on given dataset
-def query_victim_dataset(victim, train_loader):
+def query_victim_dataset(victim, train_loader, k):
     # query victim
     print(f'Query {victim["model_name"]} victim on {victim["data"]} dataset')
     X = []
@@ -38,7 +38,16 @@ def query_victim_dataset(victim, train_loader):
         if torch.cuda.is_available():
             xList = xList.type(torch.cuda.FloatTensor)
         yList = fetch_logits(args=victim, query_img=xList)
-        yList = torch.max(yList.data, 1)[1]
+        if k==0:
+            yList = torch.max(yList.data, 1)[1]
+        else:
+            val, ind = torch.topk(yList, k, dim=1)
+            ones = (torch.ones(yList.shape)*float('-inf'))
+            if torch.cuda.is_available():
+                ones = ones.type(torch.cuda.FloatTensor)
+            yList = ones.scatter_(1, ind, val)
+            yList = torch.nn.functional.softmax(yList, dim=1)
+            
         X.append(xList)
         Y.append(yList)
         cntr += len(xList)
@@ -49,7 +58,7 @@ def query_victim_dataset(victim, train_loader):
     query_loader = DataLoader(query_dataset, batch_size=config['batch_size'], shuffle=False)
     assert len(query_loader.dataset) == len(train_loader.dataset), "Queried dataloader not equal to query size"
     assert len(query_loader.dataset[0]) == len(train_loader.dataset[0]), "Queried dataloader dimension are wrong"
-    print(f'\r    - input:{len(train_loader.dataset)} queried:{len(query_loader.dataset)}')
+    print(f'\r    - input:{len(train_loader.dataset)} queried:{len(query_loader.dataset)} k:{k}')
     return query_loader
 
 
