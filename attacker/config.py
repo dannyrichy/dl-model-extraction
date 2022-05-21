@@ -1,6 +1,6 @@
 import torch
 
-from victim.__init__ import *
+from victim import *
 
 config = {
     "batch_size": 500,
