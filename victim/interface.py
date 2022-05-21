@@ -1,6 +1,5 @@
 import victim.cifar100_interface as cifar100
 import victim.cifar10_interface as cifar10
-from utils import DEVICE
 from victim import *
 
 
@@ -32,10 +31,9 @@ def fetch_logits(args=None, query_img=None):
         args["weight_decay"] = 1e-2
     if args["data"] == CIFAR_10:
         model = cifar10.model_builder(args)
-        model.to(DEVICE)
-        # model.model.eval()
+        model.model.eval()
         return model.model(query_img)
     elif args["data"] == CIFAR_100:
         model = cifar100.model_builder(args)
-        model.to(DEVICE)
+        model.eval()
         return model(query_img)

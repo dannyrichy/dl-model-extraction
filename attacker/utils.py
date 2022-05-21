@@ -9,6 +9,7 @@ from attacker.ResNet34 import *
 from attacker.config import *
 from ood.dataset import OODDataset
 from victim import *
+from utils import DEVICE
 
 
 # set seed for all packages
@@ -127,9 +128,10 @@ def training(model, train_loader, test_loader, epochs, optimizer, loss):
             if torch.cuda.is_available():
                 xList = xList.type(torch.cuda.FloatTensor)
                 yList = yList.type(torch.cuda.LongTensor)
-                device = torch.device(config['device'])
+                device = torch.device(DEVICE)
                 model.to(device)
-
+            
+            model.train()    
             outputs = model(xList)
             train_loss_func = loss(outputs, yList)
             train_loss_func.backward()
@@ -155,9 +157,10 @@ def training(model, train_loader, test_loader, epochs, optimizer, loss):
             if torch.cuda.is_available():
                 xList = xList.type(torch.cuda.FloatTensor)
                 yList = yList.type(torch.cuda.LongTensor)
-                device = torch.device(config['device'])
+                device = torch.device(DEVICE)
                 model.to(device)
 
+            model.eval()
             outputs = model(xList)
             test_loss_func = loss(outputs, yList)
 

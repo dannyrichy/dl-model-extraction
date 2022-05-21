@@ -1,7 +1,6 @@
 import os
-
 from torch.utils.data import TensorDataset
-
+from attacker.config import *
 from attacker.utils import *
 from victim.interface import fetch_logits
 
@@ -9,9 +8,9 @@ from victim.interface import fetch_logits
 def query_victim(victim, outputs, train_loader, query_size, k=0, q_type=None, train=True):
     # update filename
     if train:
-        filename = f'queried/query_traindata_{victim["data"]}_{victim["model_name"]}_k{k}'
+        filename = f'queried/query_{victim["data"]}_{victim["model_name"]}_k{k}_traindata'
     else:
-        filename = f'queried/query_testdata_{victim["data"]}_{victim["model_name"]}_k{k}'
+        filename = f'queried/query_{victim["data"]}_{victim["model_name"]}_k{k}_testdata'
     # load data if file exists:
     if os.path.exists(os.path.join(os.getcwd(), filename) + '.pt'):
         print(f'Loading queried {victim["data"]} dataset with {victim["model_name"]} victim')
@@ -35,18 +34,13 @@ def query_victim_dataset(victim, train_loader, k):
     Y = []
     cntr = 0
     for (xList, _) in train_loader:
-        if torch.cuda.is_available():
-            xList = xList.type(torch.cuda.FloatTensor)
         yList = fetch_logits(args=victim, query_img=xList)
         if k==0:
             yList = torch.max(yList.data, 1)[1]
         else:
             val, ind = torch.topk(yList, k, dim=1)
-            ones = (torch.ones(yList.shape)*float('-inf'))
-            if torch.cuda.is_available():
-                ones = ones.type(torch.cuda.FloatTensor)
-            yList = ones.scatter_(1, ind, val)
-            yList = torch.nn.functional.softmax(yList, dim=1)
+            val = torch.nn.functional.softmax(val, dim=1)
+            yList = (torch.zeros(yList.shape)).scatter_(1, ind, val)
             
         X.append(xList)
         Y.append(yList)
