@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
 import torch
 from torchmetrics import Accuracy
+from torchvision import transforms
 
 from victim.cifar10_models.densenet import densenet121, densenet161, densenet169
 from victim.cifar10_models.googlenet import googlenet
@@ -34,12 +35,13 @@ class CIFAR10Module(pl.LightningModule):
         self.max_epochs = params["max_epochs"]
         self.criterion = torch.nn.CrossEntropyLoss()
         self.accuracy = Accuracy()
+        self.transforms = transforms.Normalise((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616))
 
         self.model = all_classifiers[params["model_name"]]
 
     def forward(self, batch):
         images, labels = batch
-        predictions = self.model(images)
+        predictions = self.model(self.transforms(images))
         loss = self.criterion(predictions, labels)
         accuracy = self.accuracy(predictions, labels)
         return loss, accuracy * 100
