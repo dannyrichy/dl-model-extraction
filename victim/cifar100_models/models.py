@@ -26,12 +26,13 @@ all_classifiers = {
 
 
 class CIFAR100Module(pl.LightningModule):
-    def __init__(self, params):
+    def __init__(self, params, train_size):
         super().__init__()
         # self.hparams = hparams
         self.lr = params["learning_rate"]
         self.weight_decay = params["weight_decay"]
         self.max_epochs = params["max_epochs"]
+        self.train_size = train_size
         self.criterion = torch.nn.CrossEntropyLoss()
         self.accuracy = Accuracy()
 
@@ -67,7 +68,7 @@ class CIFAR100Module(pl.LightningModule):
             momentum=0.9,
             nesterov=True,
         )
-        total_steps = self.max_epochs * len(self.train_dataloader())
+        total_steps = self.max_epochs * self.train_size
         scheduler = {
             "scheduler": WarmupCosineLR(
                 optimizer, warmup_epochs=total_steps * 0.3, max_epochs=total_steps
