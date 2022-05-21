@@ -35,7 +35,7 @@ class CIFAR10Module(pl.LightningModule):
         self.max_epochs = params["max_epochs"]
         self.criterion = torch.nn.CrossEntropyLoss()
         self.accuracy = Accuracy()
-        self.transforms = transforms.Normalise((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616))
+        self.transforms = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616))
 
         self.model = all_classifiers[params["model_name"]]
 
