@@ -1,17 +1,16 @@
 import os
-
 from torch.utils.data import TensorDataset
-
+from attacker.config import config
 from attacker.utils import *
-from victim.interface import fetch_logits
+from victim.interface import  fetch_victim_model
 
 
-def query_victim(victim, outputs, train_loader, query_size, q_type=None, train=True):
+def query_victim(victim, outputs, train_loader, query_size,q_type=None, train=True):
     # update filename
     if train:
-        filename = f'queried/query_traindata_{victim["data"]}_{victim["model_name"]}'
+        filename = f'queried/query_{victim["data"]}_{victim["model_name"]}_traindata'
     else:
-        filename = f'queried/query_testdata_{victim["data"]}_{victim["model_name"]}'
+        filename = f'queried/query_{victim["data"]}_{victim["model_name"]}_testdata'
     # load data if file exists:
     if os.path.exists(os.path.join(os.getcwd(), filename) + '.pt'):
         print(f'Loading queried {victim["data"]} dataset with {victim["model_name"]} victim')
@@ -34,11 +33,13 @@ def query_victim_dataset(victim, train_loader):
     X = []
     Y = []
     cntr = 0
+    victim_model = fetch_victim_model(args=victim)
     for (xList, _) in train_loader:
         if torch.cuda.is_available():
             xList = xList.type(torch.cuda.FloatTensor)
-        yList = fetch_logits(args=victim, query_img=xList)
+        yList = victim_model(xList)
         yList = torch.max(yList.data, 1)[1]
+            
         X.append(xList)
         Y.append(yList)
         cntr += len(xList)
@@ -70,14 +71,20 @@ def query_type(victim, outputs, queryloader, query_size, filename, query_type=No
         indices = np.arange(query_size)
 
     # Saving the indices
-    torch.save(indices, filename + '_indices.pt')
+    torch.save(indices, filename + f'{query_type}_{query_size}_indices.pt')
 
     dataset = torch.utils.data.Subset(dataset, indices)
+    dataset.transform = torchvision.transforms.Compose([
+        torchvision.transforms.RandomCrop(32, padding=4),
+        torchvision.transforms.RandomHorizontalFlip(),
+        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=config['batch_size'], shuffle=True)
     assert len(dataloader.dataset) == query_size, "Sampled dataset not equal to query size"
     assert len(dataloader.dataset[0]) == len(queryloader.dataset[0]), "Sampled dimenions don't match input"
     print(f'    - input:{len(queryloader.dataset)} sampled:{len(dataloader.dataset)}')
     return dataloader
+
+
 
 # # archived: query victim model directly
 #     X, _ = next(iter(dataloader))

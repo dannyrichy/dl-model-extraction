@@ -30,7 +30,7 @@ class ResBlock(nn.Module):
     def forward(self, input):
         shortcut = self.shortcut(input)
         input = nn.ReLU()(self.bn1(self.conv1(input)))
-        input = nn.ReLU()(self.bn1(self.conv2(input)))
+        input = nn.ReLU()(self.bn2(self.conv2(input)))
         input = input + shortcut
         return nn.ReLU()(input)
 

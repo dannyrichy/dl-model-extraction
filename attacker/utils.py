@@ -1,5 +1,3 @@
-import pickle
-
 import matplotlib.pyplot as plt
 import numpy as np
 import torchvision
@@ -9,6 +7,7 @@ from attacker.ResNet34 import *
 from attacker.config import *
 from ood.dataset import OODDataset
 from victim import *
+from utils import DEVICE
 
 
 # set seed for all packages
@@ -31,9 +30,7 @@ def get_dataset(data_type):
     :rtype:
     """
     # Normalizing transform
-    transform = torchvision.transforms.Compose(
-        [torchvision.transforms.ToTensor(),
-         torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    transform = torchvision.transforms.ToTensor()
 
     # select dataset
     if data_type == CIFAR_10:
@@ -67,6 +64,7 @@ def get_dataloader(data_type):
 # Load Indices from saved corset algorithms
 
 def load_coreset(dataset, query_type):
+    import pickle
     # select filename
     if query_type == 'coreset':
         if dataset == CIFAR_10:
@@ -115,10 +113,12 @@ def training(model, train_loader, test_loader, epochs, optimizer, loss):
     test_loss = []
     train_loss_func = None
     for epoch in range(epochs):
+        print("\repoch", epoch + 1)
+        
+        # Train Data
         num_train = 0
         num_correct_train = 0
-        print("\repoch", epoch + 1)
-        # Train Data
+        model.train() 
         for (xList, yList) in train_loader:
             xList, yList = torch.autograd.Variable(
                 xList), torch.autograd.Variable(yList)
@@ -127,13 +127,14 @@ def training(model, train_loader, test_loader, epochs, optimizer, loss):
             if torch.cuda.is_available():
                 xList = xList.type(torch.cuda.FloatTensor)
                 yList = yList.type(torch.cuda.LongTensor)
-                device = torch.device(config['device'])
+                device = torch.device(DEVICE)
                 model.to(device)
-
-            outputs = model(xList)
-            train_loss_func = loss(outputs, yList)
-            train_loss_func.backward()
-            optimizer.step()
+            
+            with torch.set_grad_enabled(True):
+                outputs = model(xList)
+                train_loss_func = loss(outputs, yList)
+                train_loss_func.backward()
+                optimizer.step()
 
             num_train += len(yList)  # i.e., add bath size
 
@@ -151,15 +152,17 @@ def training(model, train_loader, test_loader, epochs, optimizer, loss):
         # Test Data
         num_test = 0
         num_correct_test = 0
+        model.eval()
         for (xList, yList) in test_loader:
             if torch.cuda.is_available():
                 xList = xList.type(torch.cuda.FloatTensor)
                 yList = yList.type(torch.cuda.LongTensor)
-                device = torch.device(config['device'])
+                device = torch.device(DEVICE)
                 model.to(device)
-
-            outputs = model(xList)
-            test_loss_func = loss(outputs, yList)
+            
+            with torch.set_grad_enabled(False):
+                outputs = model(xList)
+                test_loss_func = loss(outputs, yList)
 
             num_test += len(yList)
             predicts = torch.max(outputs.data, 1)[1]
@@ -171,6 +174,78 @@ def training(model, train_loader, test_loader, epochs, optimizer, loss):
               (test_acc[-1], test_loss[-1]))
     return train_loss, train_acc, test_loss, test_acc
 
+
+# Train model with queried logits
+
+# + active=""
+# def attacker_training_logits(attacker, victim, train_loader, test_loader, epochs, optimizer, loss):
+#     train_acc = []
+#     train_loss = []
+#     test_acc = []
+#     test_loss = []
+#     train_loss_func = None
+#     for epoch in range(epochs):
+#         num_train = 0
+#         num_correct_train = 0
+#         print("\repoch", epoch + 1)
+#         # Train Data
+#         for (xList, _) in train_loader:
+#             # query from victim
+#             yList = fetch_logits(args=victim, query_img=xList)
+#             
+#             xList, yList = torch.autograd.Variable(
+#                 xList), torch.autograd.Variable(yList)
+#             optimizer.zero_grad()
+#
+#             if torch.cuda.is_available():
+#                 xList = xList.type(torch.cuda.FloatTensor)
+#                 yList = yList.type(torch.cuda.LongTensor)
+#                 device = torch.device(DEVICE)
+#                 attacker.to(device)
+#             
+#             attacker.train()    
+#             outputs = attacker(xList)
+#             train_loss_func = loss(outputs, yList)
+#             train_loss_func.backward()
+#             optimizer.step()
+#
+#             num_train += len(yList)  # i.e., add bath size
+#
+#             predicts = torch.max(outputs.data, 1)[1]
+#             num_correct_train += (predicts == yList).float().sum()
+#
+#             print('\r %d ...' % num_train, end='')
+#
+#         train_acc.append(num_correct_train / num_train)
+#         train_loss.append(train_loss_func.data)
+#         print("\r    - train_acc %.5f train_loss %.5f" %
+#               (train_acc[-1], train_loss[-1]))
+#         # if(epoch%(int(epochs/4))==0): print(model.L0[0].weight)
+#
+#         # Test Data
+#         num_test = 0
+#         num_correct_test = 0
+#         for (xList, yList) in test_loader:
+#             if torch.cuda.is_available():
+#                 xList = xList.type(torch.cuda.FloatTensor)
+#                 yList = yList.type(torch.cuda.LongTensor)
+#                 device = torch.device(DEVICE)
+#                 attacker.to(device)
+#
+#             attacker.eval()
+#             outputs = attacker(xList)
+#             test_loss_func = loss(outputs, yList)
+#
+#             num_test += len(yList)
+#             predicts = torch.max(outputs.data, 1)[1]
+#             num_correct_test += (predicts == yList).float().sum()
+#
+#         test_acc.append(num_correct_test / num_test)
+#         test_loss.append(test_loss_func.data)
+#         print("\r    - test_acc  %.5f test_loss  %.5f" %
+#               (test_acc[-1], test_loss[-1]))
+#     return train_loss, train_acc, test_loss, test_acc
+# -
 
 # Save and Visualize all results
 
