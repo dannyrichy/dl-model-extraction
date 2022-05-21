@@ -36,7 +36,8 @@ def fetch_logits(args=None, query_img=None):
         model.model.eval()
         return model.model(query_img)
     elif args["data"] == CIFAR_100:
-        model = cifar100.model_builder(args)
+        # model = cifar100.model_builder(args)
+        model = cifar100.our_model(args)
         model.to(DEVICE)
         model.eval()
         return model(query_img)
