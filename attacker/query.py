@@ -74,6 +74,10 @@ def query_type(victim, outputs, queryloader, query_size, filename, query_type=No
     torch.save(indices, filename + f'{query_type}_{query_size}_indices.pt')
 
     dataset = torch.utils.data.Subset(dataset, indices)
+    dataset.transform = torchvision.transforms.Compose([
+        torchvision.transforms.RandomCrop(32, padding=4),
+        torchvision.transforms.RandomHorizontalFlip(),
+        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=config['batch_size'], shuffle=True)
     assert len(dataloader.dataset) == query_size, "Sampled dataset not equal to query size"
     assert len(dataloader.dataset[0]) == len(queryloader.dataset[0]), "Sampled dimenions don't match input"

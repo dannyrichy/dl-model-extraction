@@ -30,9 +30,7 @@ def get_dataset(data_type):
     :rtype:
     """
     # Normalizing transform
-    transform = torchvision.transforms.Compose(
-        [torchvision.transforms.ToTensor(),
-         torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    transform = torchvision.transforms.ToTensor()
 
     # select dataset
     if data_type == CIFAR_10:
