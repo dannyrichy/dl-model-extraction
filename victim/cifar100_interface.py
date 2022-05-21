@@ -1,3 +1,6 @@
+import torch
+
+from victim import RESNET50, VGG19_BN
 from victim.pytorch_cifar_models import resnet, vgg, repvgg, shufflenetv2, mobilenetv2, vit
 
 
@@ -14,3 +17,10 @@ def model_builder(args_dict):
         return getattr(shufflenetv2, f"{args_dict['data']}_{args_dict['model_name']}")()
     elif args_dict["model_name"].startswith("vit"):
         return getattr(vit, f"{args_dict['data']}_{args_dict['model_name']}")()
+
+
+def our_model(args_dict):
+    if args_dict["model_name"] == RESNET50:
+        return torch.load(f"/home/shared/victim_models/{RESNET50}_cifar100.pt")
+    if args_dict["model_name"] == VGG19_BN:
+        return torch.load(f"/home/shared/victim_models/{VGG19_BN}_cifar100.pt")

@@ -1,7 +1,7 @@
 import victim.cifar100_interface as cifar100
 import victim.cifar10_interface as cifar10
-from victim import *
 from utils import DEVICE
+from victim import *
 
 
 def fetch_logits(args=None, query_img=None):
@@ -30,7 +30,7 @@ def fetch_logits(args=None, query_img=None):
         args["num_workers"] = 8
         args["learning_rate"] = 1e-2
         args["weight_decay"] = 1e-2
-    if args["data"] in[CIFAR_10, OOD]:
+    if args["data"] in [CIFAR_10, OOD]:
         model = cifar10.model_builder(args)
         model.to(DEVICE)
         model.model.eval()
@@ -66,15 +66,14 @@ def fetch_victim_model(args=None):
         args["num_workers"] = 8
         args["learning_rate"] = 1e-2
         args["weight_decay"] = 1e-2
-    if args["data"] in[CIFAR_10, OOD]:
+    if args["data"] in [CIFAR_10, OOD]:
         model = cifar10.model_builder(args)
         model.to(DEVICE)
         model.model.eval()
         return model.model
     elif args["data"] == CIFAR_100:
-        model = cifar100.model_builder(args)
+        # model = cifar100.model_builder(args)
+        model = cifar100.our_model(args)
         model.to(DEVICE)
         model.eval()
         return model
-
-
