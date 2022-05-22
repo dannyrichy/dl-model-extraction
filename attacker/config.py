@@ -9,7 +9,7 @@ config = {
     "lr_steps": 1000,
     "base_lr": 1e-5,
     "max_lr": 1e-1,
-    "query_size":50000,
+    "query_size":20000,
     "query_type": 'coreset',
     "victim": { "data": CIFAR_10,  "model_name": RESNET50 },
     "attacker": RESNET34

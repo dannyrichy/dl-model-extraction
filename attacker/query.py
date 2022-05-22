@@ -22,43 +22,50 @@ def query_victim(victim, outputs, train_loader, query_size,q_type=None, train=Tr
         torch.save(query_loader, filename + '.pt')
 
     # sample data
-    dataloader = query_type(victim, outputs, query_loader, query_size, filename, query_type=q_type)
+    dataloader = query_type(victim, outputs, query_loader, query_size, filename, query_type=q_type, transforms=train)
     return dataloader
 
 
 # Query Victim on given dataset
 def query_victim_dataset(victim, train_loader):
-    # query victim
+    # initialize
     print(f'Query {victim["model_name"]} victim on {victim["data"]} dataset')
     X = []
     Y = []
     cntr = 0
+    
+    # fetch victim model
     victim_model = fetch_victim_model(args=victim)
+    
+    # query victim
     for (xList, _) in train_loader:
         if torch.cuda.is_available():
             xList = xList.type(torch.cuda.FloatTensor)
         yList = victim_model(xList)
         yList = torch.max(yList.data, 1)[1]
-            
         X.append(xList)
         Y.append(yList)
         cntr += len(xList)
         print('\r %d ...' % cntr, end='')
 
-    # create queryset   
+    # create queryset   adn respective datalaoder
     query_dataset = TensorDataset(torch.cat(X), torch.cat(Y))
     query_loader = DataLoader(query_dataset, batch_size=config['batch_size'], shuffle=False)
+    
     assert len(query_loader.dataset) == len(train_loader.dataset), "Queried dataloader not equal to query size"
     assert len(query_loader.dataset[0]) == len(train_loader.dataset[0]), "Queried dataloader dimension are wrong"
     print(f'\r    - input:{len(train_loader.dataset)} queried:{len(query_loader.dataset)}')
+    
     return query_loader
 
 
 # Sample dataset using query-type and size
-def query_type(victim, outputs, queryloader, query_size, filename, query_type=None):
+def query_type(victim, outputs, queryloader, query_size, filename, query_type=None, transforms=None):
     # create sampleset from queryloader
     print(f'Sample using {query_type} with query size {query_size}')
     dataset = queryloader.dataset
+    
+    # choose indices based on type
     if query_type == 'random':
         indices = np.random.default_rng().choice(len(dataset), size=query_size, replace=False)
     elif query_type == 'coreset' or query_type == 'coreset_cross':
@@ -73,18 +80,28 @@ def query_type(victim, outputs, queryloader, query_size, filename, query_type=No
     # Saving the indices
     torch.save(indices, filename + f'{query_type}_{query_size}_indices.pt')
 
+    # creaate subset dataset
     dataset = torch.utils.data.Subset(dataset, indices)
-    dataset.transform = torchvision.transforms.Compose([
-        torchvision.transforms.RandomCrop(32, padding=4),
-        torchvision.transforms.RandomHorizontalFlip(),
-        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))])
+    
+    #perform transforms
+    if transforms == True:
+        # train is set to true, perform normalization and augmentation
+        dataset.transform = transform_data_augment
+    elif transforms == False:
+        # train is set to false, perform only normalization
+        dataset.transform = transform_normalize
+    else:
+        # do no transform
+        pass
+        
+    # create dataloader from dataset
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=config['batch_size'], shuffle=True)
+    
     assert len(dataloader.dataset) == query_size, "Sampled dataset not equal to query size"
     assert len(dataloader.dataset[0]) == len(queryloader.dataset[0]), "Sampled dimenions don't match input"
-    print(f'    - input:{len(queryloader.dataset)} sampled:{len(dataloader.dataset)}')
+    print(f'    - input:{len(queryloader.dataset)} sampled:{len(dataloader.dataset)} data augmentation:{transforms}')
+    
     return dataloader
-
-
 
 # # archived: query victim model directly
 #     X, _ = next(iter(dataloader))
