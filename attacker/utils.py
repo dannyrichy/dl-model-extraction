@@ -114,6 +114,14 @@ def get_model(model_name, outputs):
     return model
 
 
+# Load trained models
+
+def get_trained_attacker(model_name, outputs, model_path):
+    model = get_model(model_name, outputs)
+    model.load_state_dict(torch.load(model_path))
+    return model
+
+
 # Save and Visualize all results
 
 # visualization

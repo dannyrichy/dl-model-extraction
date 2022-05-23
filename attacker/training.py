@@ -7,7 +7,7 @@ import pprint
 
 # Training for Attacker 
 
-def attacker_training(attacker_model, trainloader, testloader, victim_type, k=None, verbose=False):
+def attacker_training(attacker_model, trainloader, testloader, victim_type, num_classes, k=None, verbose=False):
     
     
     # initialize score lists
@@ -22,19 +22,24 @@ def attacker_training(attacker_model, trainloader, testloader, victim_type, k=No
     scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=config["base_lr"], max_lr=config["max_lr"],
                                                   step_size_up=config["lr_steps"], mode='triangular2', cycle_momentum=False)
 
-    # select loss
-    loss = torch.nn.CrossEntropyLoss()
+    # K_LOGITS_LOGIC - select loss
+    if(k != None):
+        loss = torch.nn.KLDivLoss(reduction='batchmean')
+    else:
+        loss = torch.nn.CrossEntropyLoss()
     
-    # K_LOGITS_LOGIC
+    
+    # K_LOGITS_LOGIC -need victim
     if(k != None):
         # fetch victim model
         victim_model = fetch_victim_model(args=victim_type)
        
     # calculate epochs from learning cycles
     epochs = int(2*config["lr_cycles"]*config["lr_steps"]/(len(trainloader.dataset)/config["batch_size"]))
+    if verbose: print(f'Total epochs to run: {epochs}')
     
     # run epochs
-    for epoch in tqdm(range(epochs)):
+    for epoch in tqdm(range(epochs), disable=verbose):
         if verbose: print(f'\r\tepoch {epoch + 1}')
         
         # train on Train Data
@@ -42,14 +47,13 @@ def attacker_training(attacker_model, trainloader, testloader, victim_type, k=No
         num_correct_train = 0
         attacker_model.train() 
         for (xList, yList) in trainloader:
-            xList, yList = torch.autograd.Variable(xList), torch.autograd.Variable(yList)
+            # xList, yList = torch.autograd.Variable(xList), torch.autograd.Variable(yList)
             optimizer.zero_grad()
 
             if torch.cuda.is_available():
                 xList = xList.type(torch.cuda.FloatTensor)
                 yList = yList.type(torch.cuda.LongTensor)
-                device = torch.device(DEVICE)
-                attacker_model.to(device)
+            attacker_model.to(DEVICE)
             
             # K_LOGITS_LOGIC
             if(k != None):
@@ -68,6 +72,10 @@ def attacker_training(attacker_model, trainloader, testloader, victim_type, k=No
             # get outputs and train model
             with torch.set_grad_enabled(True):
                 outputs = attacker_model(xList)
+                # K_LOGITS_LOGIC
+                if(k != None):
+                    # for KL div loss
+                    outputs = torch.nn.functional.log_softmax(outputs, dim=1)
                 train_loss_func = loss(outputs, yList)
                 train_loss_func.backward()
                 optimizer.step()
@@ -97,14 +105,23 @@ def attacker_training(attacker_model, trainloader, testloader, victim_type, k=No
             if torch.cuda.is_available():
                 xList = xList.type(torch.cuda.FloatTensor)
                 yList = yList.type(torch.cuda.LongTensor)
-                device = torch.device(DEVICE)
-                attacker_model.to(device)
+            attacker_model.to(DEVICE)
             
             #  get outputs
             with torch.set_grad_enabled(False):
                 outputs = attacker_model(xList)
+                # K_LOGITS_LOGIC
+                if(k != None):
+                    # for KL div loss
+                    outputs = torch.nn.functional.log_softmax(outputs, dim=1)
+                    yList = torch.nn.functional.one_hot(yList, num_classes=num_classes)
                 test_loss_func = loss(outputs, yList)
             
+            # K_LOGITS_LOGIC
+            if(k != None):
+                # change k-logits to labels for accuracy calucaltion
+                yList = torch.max(yList.data, 1)[1]
+                
             # get correct predictions count
             num_test += len(yList)
             predicts = torch.max(outputs.data, 1)[1]
@@ -143,37 +160,36 @@ def investigate(parameters, verbose=False, seed=None):
 
         # query test data
         querytestloader = query_victim(victim_type, outputs, testloader, len(testloader.dataset), train=False)
+       
+        # Iterate Through Query Type
+        for querytype in parameters["query_type"]:
+            # Iterate Through Query Size
+            for size in parameters["query_size"]:
+                # Iterate Through Logits size
+                for k in parameters["k_logits"]:
+                    # K_LOGITS_LOGIC
+                    if(k != None):
+                        # sample train data on querytype.size
+                        fo = f'queried/query_traindata_{victim_type["data"]}_{victim_type["model_name"]}_k{k}'
+                        querytrainloader = query_type(victim_type, outputs, trainloader, size, fo, querytype)
+                    else:
+                        # query train data
+                        querytrainloader = query_victim(victim_type, outputs, trainloader, size, q_type=querytype)
 
-        # Iterate through Attacker Model
-        for attacker_type in parameters["attacker"]:
-            # Iterate Through Query Type
-            for querytype in parameters["query_type"]:
-                # Iterate Through Query Size
-                for size in parameters["query_size"]:
-                    # Iterate Through Logits size
-                    for k in parameters["k_logits"]:
+                    # Iterate through Attacker Model
+                    for attacker_type in parameters["attacker"]:
+                        print('\n-----------------------------------------------------------------------------')
+                        print(f'\tDataset: {victim_type["data"]}')
+                        print(f'\tVictim: {victim_type["model_name"]}\tAttacker: {attacker_type}')
+                        print(f'\tQuery Type: {querytype}\tQuery Size: {size}\tLogits: {k}')
                         print('-----------------------------------------------------------------------------')
-                        print(f'\t\tDataset: {victim_type["data"]}')
-                        print(f'\t\tVictim: {victim_type["model_name"]}\tAttacker: {attacker_type}')
-                        print(f'\t\tQuery Type: {querytype}\tQuery Size: {size}\tLogits: {k}')
-                        print('-----------------------------------------------------------------------------')
-
-                        
-                        # K_LOGITS_LOGIC
-                        if(k != None):
-                            # sample train data on querytype.size
-                            fo = f'queried/query_traindata_{victim_type["data"]}_{victim_type["model_name"]}_k{k}'
-                            querytrainloader = query_type(victim_type, outputs, trainloader, size, fo, querytype)
-                        else:
-                            # query train data
-                            querytrainloader = query_victim(victim_type, outputs, trainloader, size, q_type=querytype)
-
 
                         # initialize attacker model
                         attacker = get_model(attacker_type, outputs)
 
                         # train attacker model
-                        attacker_result = attacker_training(attacker, querytrainloader, querytestloader, victim_type, k=k, verbose=verbose)
+                        attacker_result = attacker_training(attacker, querytrainloader, querytestloader, 
+                                                            victim_type, outputs, k=k, verbose=verbose)
                         
                         # save & visualize model inference
                         title = f'A_{attacker_type}_{victim_type["model_name"]}_{victim_type["data"]}_{querytype}_{size}_k{k}'

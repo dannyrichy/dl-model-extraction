@@ -77,13 +77,13 @@ def query_type(victim, outputs, queryloader, query_size, filename, query_type=No
     else:
         indices = np.arange(query_size)
 
-    # Saving the indices
+    # saving the indices
     torch.save(indices, filename + f'_{query_type}_{query_size}_indices.pt')
 
-    # creaate subset dataset
+    # create subset dataset
     dataset = torch.utils.data.Subset(dataset, indices)
     
-    #perform transforms
+    # perform transforms
     if transforms == True:
         # train is set to true, perform normalization and augmentation
         dataset.transform = transform_data_augment
