@@ -177,7 +177,7 @@ def investigate(parameters, verbose=False, seed=None):
                     # K_LOGITS_LOGIC
                     if(k != None):
                         # sample train data on querytype.size
-                        fo = f'queried/query_traindata_{victim_type["data"]}_{victim_type["model_name"]}_k{k}'
+                        fo = f'queried/query_{victim_type["data"]}_{victim_type["model_name"]}_traindata_k{k}'
                         querytrainloader = query_type(victim_type, outputs, trainloader, size, fo, querytype)
                     else:
                         # query train data
@@ -214,7 +214,7 @@ def investigate(parameters, verbose=False, seed=None):
                                         "Test Loss": percent[2],
                                         "Test Accuracy": percent[3]}
 
-                        if verbose: print(results_dict)
+                        pprint.pprint(results_dict)
                         results.append(results_dict)
                         print('-----------------------------------------------------------------------------')
     
