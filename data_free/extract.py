@@ -200,16 +200,19 @@ class DataFreeModelExtraction:
                         victim_prediction -= victim_prediction.min(dim=1).values.view(-1, 1).detach()
                     elif self.vic_logit_correction == 'mean':
                         victim_prediction -= victim_prediction.mean(dim=1).view(-1, 1).detach()
-                loss_values = - loss_fn(attacker_prediction, victim_prediction, reduction='none').mean(dim=1).view(-1, self.grad_m + 1)
 
             elif self.loss_type == "kl":
                 loss_fn = kl_div
                 attacker_prediction = log_softmax(attacker_prediction, dim=1)
                 victim_prediction = softmax(victim_prediction.detach(), dim=1)
-                loss_values = - loss_fn(attacker_prediction, victim_prediction, reduction='none').sum(dim=1).view(-1, self.grad_m + 1)
 
             else:
                 raise ValueError(self.loss_type)
+
+            if self.loss_type == "l1":
+                loss_values = - loss_fn(attacker_prediction, victim_prediction, reduction='none').mean(dim=1).view(-1, self.grad_m + 1)
+            else:
+                loss_values = - loss_fn(attacker_prediction, victim_prediction, reduction='none').sum(dim=1).view(-1, self.grad_m + 1)
 
             # Compute difference following each direction
             differences = loss_values[:, :-1] - loss_values[:, -1].view(-1, 1)
