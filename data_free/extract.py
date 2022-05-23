@@ -69,6 +69,7 @@ class DataFreeModelExtraction:
             self.generator_model.train()
             # Get fake image from generator
             fake = self.generator_model(z, pre_x=self.approx_grad)
+            print(torch.min(fake), torch.max(fake))
             approx_grad_wrt_x, gradient_loss = self.estimate_gradient_objective(fake,
                                                                                 pre_x=True)
 

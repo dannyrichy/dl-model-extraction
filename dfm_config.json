@@ -1,0 +1,19 @@
+{
+  "batch_size": 256,
+  "num_gen_iter": 1,
+  "num_att_iter": 1,
+  "grad_m": 1,
+  "lr_att": 0.01,
+  "lr_weight_decay": 0.01,
+  "lr_gen": 0.01,
+  "query_budget": 20000000,
+  "epoch_itrs": 50,
+  "scheduler": "multistep",
+  "scale": 3e-1,
+  "loss_type": "kl",
+  "logits_flag": 1,
+  "approx_grad": 1,
+  "forward_differences": 1,
+  "vic_logit_correction": "mean",
+  "nz":256
+}
