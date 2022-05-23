@@ -19,6 +19,12 @@ def set_seed(seed):
         np.random.seed(seed)
 
 
+# Transforms for normalizing for different victims
+
+transform_victim_C10 = torchvision.transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616))
+
+transform_victim_C100 = torchvision.transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761))
+
 # Transforms for normalizing and data augmentation for attacker
 
 transform_normalize = torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.25, 0.25, 0.25))

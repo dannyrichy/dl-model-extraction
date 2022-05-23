@@ -54,11 +54,15 @@ def attacker_training(attacker_model, trainloader, testloader, victim_type, num_
                 xList = xList.type(torch.cuda.FloatTensor)
                 yList = yList.type(torch.cuda.LongTensor)
             attacker_model.to(DEVICE)
-            
+
             # K_LOGITS_LOGIC
             if(k != None):
                 # query victim for logits
-                yList = victim_model(xList)
+                if victim["data"] in [CIFAR_10, OOD]:
+                    xList_vic = transform_victim_C10(xList)
+                else:
+                    xList_vic = transform_victim_C100(xList)
+                yList = victim_model(xList_vic)
                 val, ind = torch.topk(yList, k, dim=1)
                 ones = (torch.ones(yList.shape)*float('-inf'))
                 if torch.cuda.is_available():
@@ -66,8 +70,8 @@ def attacker_training(attacker_model, trainloader, testloader, victim_type, num_
                 yList = ones.scatter_(1, ind, val)
                 yList = torch.nn.functional.softmax(yList, dim=1)
 
-                # perform data augmentation on inputs  
-                xList = transform_data_augment(xList)
+            # perform data augmentation on train inputs  
+            xList = transform_data_augment(xList)
             
             # get outputs and train model
             with torch.set_grad_enabled(True):
@@ -107,6 +111,9 @@ def attacker_training(attacker_model, trainloader, testloader, victim_type, num_
                 yList = yList.type(torch.cuda.LongTensor)
             attacker_model.to(DEVICE)
             
+            # perform normalization on test inputs  
+            xList = transform_normalize(xList)
+            
             #  get outputs
             with torch.set_grad_enabled(False):
                 outputs = attacker_model(xList)
@@ -130,8 +137,8 @@ def attacker_training(attacker_model, trainloader, testloader, victim_type, num_
         test_acc.append(num_correct_test / num_test)
         test_loss.append(test_loss_func.data)
         if verbose: print("\r\t- test_acc  %.5f test_loss  %.5f" %(test_acc[-1], test_loss[-1]))
-            
-    return train_loss, train_acc, test_loss, test_acc
+
+    return attacker_model, (train_loss, train_acc, test_loss, test_acc)
 
 
 # Investigate Attacker training
@@ -188,8 +195,10 @@ def investigate(parameters, verbose=False, seed=None):
                         attacker = get_model(attacker_type, outputs)
 
                         # train attacker model
-                        attacker_result = attacker_training(attacker, querytrainloader, querytestloader, 
+                        attacker, attacker_result = attacker_training(attacker, querytrainloader, querytestloader, 
                                                             victim_type, outputs, k=k, verbose=verbose)
+                        
+
                         
                         # save & visualize model inference
                         title = f'A_{attacker_type}_{victim_type["model_name"]}_{victim_type["data"]}_{querytype}_{size}_k{k}'
