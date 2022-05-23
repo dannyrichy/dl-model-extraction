@@ -58,7 +58,7 @@ def attacker_training(attacker_model, trainloader, testloader, victim_type, num_
             # K_LOGITS_LOGIC
             if(k != None):
                 # query victim for logits
-                if victim["data"] in [CIFAR_10, OOD]:
+                if victim_type["data"] in [CIFAR_10, OOD]:
                     xList_vic = transform_victim_C10(xList)
                 else:
                     xList_vic = transform_victim_C100(xList)
