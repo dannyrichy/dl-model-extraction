@@ -30,7 +30,8 @@ class DataFreeModelExtraction:
                  grad_epsilon,
                  grad_m,
                  forward_differences,
-                 no_logits):
+                 no_logits,
+                 query_budget, cost_per_iteration):
         self.victim_model, self.attacker_model, self.generator_model = models
         self.epoch_itrs = epoch_itrs
         self.num_gen_iter = num_gen_iter
@@ -44,6 +45,8 @@ class DataFreeModelExtraction:
         self.grad_epsilon = grad_epsilon
         self.forward_differences = forward_differences
         self.no_logits = no_logits
+        self.query_budget = query_budget
+        self.cost_per_iteration = cost_per_iteration
 
     def _attacker_loss_calc(self, attacker_logits, vic_logits):
         """Kl/ L1 Loss for student"""
@@ -94,7 +97,7 @@ class DataFreeModelExtraction:
             attacker_loss.backward()
             optimiser.step()
 
-    def train(self, optimizer, query_budget, cost_per_iteration):
+    def train(self, optimizer):
         """
         Trains the entire architecture
 
@@ -106,13 +109,13 @@ class DataFreeModelExtraction:
         self.attacker_model.train()
         attacker_optimiser, generator_optimiser = optimizer
         start_ix = 0
-        while start_ix < self.epoch_itrs and query_budget >= cost_per_iteration:
+        while start_ix < self.epoch_itrs and self.query_budget >= self.cost_per_iteration:
             logging.info(f"Iteration: {start_ix} Generator training")
             self._train_generator(generator_optimiser)
-            logging.info(f"Epoch: {start_ix} Attacker training")
+            logging.info(f"Iteration: {start_ix} Attacker training")
             self._train_attacker(attacker_optimiser)
             start_ix += 1
-            query_budget -= cost_per_iteration
+            self.query_budget -= self.cost_per_iteration
 
     def test(self, test_loader=None):
         self.attacker_model.eval()
@@ -296,7 +299,9 @@ def run_dfme(victim_model,
         grad_m=params['grad_m'],
         forward_differences=params['forward_differences'],
         approx_grad=params['approx_grad'],
-        no_logits=params['no_logits']
+        no_logits=params['no_logits'],
+        query_budget=params['query_budget'],
+        cost_per_iteration=cost_per_iteration
     )
 
     test_loader = DataLoader(
@@ -310,14 +315,12 @@ def run_dfme(victim_model,
     best_acc = 0
     acc_list = []
     for epoch in range(1, number_epochs + 1):
-        logging.info(f"Master epoch: {epoch}")
+        logging.info(f"Master epoch: {epoch} starting {dfme_instance.query_budget}, {dfme_instance.cost_per_iteration}")
         if params['scheduler'] != "none":
             att_scheduler.step()
             gen_scheduler.step()
 
-        dfme_instance.train(optimizer=[att_opti, gen_opti],
-                            query_budget=params['query_budget'],
-                            cost_per_iteration=cost_per_iteration)
+        dfme_instance.train(optimizer=[att_opti, gen_opti])
         # Test
         acc = dfme_instance.test(test_loader=test_loader)
         acc_list.append(acc)
